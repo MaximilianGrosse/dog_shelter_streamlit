@@ -1,6 +1,1 @@
-.streamlit/
-!.streamlit/config.toml
-__pycache__/
-*.pyc
-pet_pics/*
-!pet_pics/*.jpg
+.streamlit/ !.streamlit/config.toml pycache/ .pyc pet_pics/!pet_pics/.jpg !pet_pics/.jpeg !pet_pics/*.png
