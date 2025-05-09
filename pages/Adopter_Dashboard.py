@@ -151,7 +151,7 @@ st.markdown("Find your furry friend or help pets find loving homes with our plat
 
 # Display image
 if os.path.exists("pics/f2.jpg"):
-    st множествоimage("pics/f2.jpg", caption="Loving Homes", width=300)
+    st.image("pics/f2.jpg", caption="Loving Homes", width=300)
 else:
     st.warning("Image f2.jpg not found. Please ensure it is in the pics/ directory.")
 
