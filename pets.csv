@@ -1,36 +1,36 @@
-pet_id,species,breed,gender,name,sheltername,activity_level,age,allergy_friendly,time_in_shelter,disability_current,disability_past,special_needs
-PET1A2B3C,Dog,Labrador,Male,Max,Shelter Lisboa,High,3,Yes,6,None,None,None
-PET4D5E6F,Cat,Siamese,Female,Luna,Shelter Lisboa,Medium,2,No,4,None,Injured leg,None
-PET7G8H9I,Rabbit,Lop,Male,Oreo,Shelter Lisboa,Low,1,Yes,3,None,None,Dietary needs
-PET0J1K2L,Turtle,Red-Eared Slider,Female,Tina,Shelter Lisboa,Low,5,No,12,None,None,UV lamp required
-PET3M4N5O,Hamster,Syrian,Male,Buddy,Shelter Lisboa,Medium,0.5,Yes,2,None,None,None
-PET6P7Q8R,Dog,Beagle,Female,Bella,Shelter Lisboa,High,4,No,8,Limping,None,Physical therapy
-PET9S0T1U,Cat,Persian,Male,Simba,Shelter Lisboa,Low,3,Yes,5,None,None,None
-PET2V3W4X,Dog,Golden Retriever,Female,Daisy,Abrigo Amigo,High,2,Yes,7,None,None,None
-PET5Y6Z7A,Cat,Tabby,Male,Tom,Abrigo Amigo,Medium,1,No,3,None,None,None
-PET8B9C0D,Rabbit,Netherland Dwarf,Female,Fluffy,Abrigo Amigo,Low,2,Yes,4,None,None,Dental care
-PET1E2F3G,Turtle,Box Turtle,Male,Sheldon,Abrigo Amigo,Low,6,No,10,None,None,Special diet
-PET4H5I6J,Hamster,Roborovski,Female,Nibbles,Abrigo Amigo,Medium,0.3,Yes,1,None,None,None
-PET7K8L9M,Dog,Poodle,Male,Charlie,Abrigo Amigo,High,5,Yes,9,None,Blind,None
-PET0N1O2P,Cat,Maine Coon,Female,Mia,Abrigo Amigo,Medium,3,No,6,None,None,Regular grooming
-PET3Q4R5S,Dog,Husky,Male,Thor,Refúgio Porto,High,4,No,5,None,None,High exercise needs
-PET6T7U8V,Cat,Bengal,Female,Sasha,Refúgio Porto,High,2,Yes,4,None,None,None
-PET9W0X1Y,Rabbit,Lionhead,Male,Bouncy,Refúgio Porto,Medium,1,Yes,2,None,None,None
-PET2Z3A4B,Turtle,Hermann’s,Female,Emma,Refúgio Porto,Low,7,No,15,None,None,Heated enclosure
-PET5C6D7E,Hamster,Dwarf,Male,Peanut,Refúgio Porto,Medium,0.4,Yes,3,None,None,None
-PET8F9G0H,Dog,Boxer,Female,Roxy,Refúgio Porto,High,3,Yes,7,None,None,None
-PET1I2J3K,Cat,Ragdoll,Male,Oliver,Refúgio Porto,Low,4,No,8,None,None,None
-PET4L5M6N,Dog,German Shepherd,Male,Rex,Refugio Sevilla,High,5,No,6,None,Amputated leg,Training required
-PET7O8P9Q,Cat,Abyssinian,Female,Cleo,Refugio Sevilla,Medium,3,Yes,5,None,None,None
-PET0R1S2T,Rabbit,Angora,Male,Snowball,Refugio Sevilla,Low,2,Yes,4,None,None,Grooming needs
-PET3U4V5W,Turtle,Slider,Female,Penny,Refugio Sevilla,Low,4,No,9,None,None,None
-PET6X7Y8Z,Hamster,Golden,Female,Coco,Refugio Sevilla,Medium,0.6,Yes,2,None,None,None
-PET9A0B1C,Dog,Chihuahua,Male,Taco,Refugio Sevilla,Medium,2,Yes,3,None,None,None
-PET2D3E4F,Cat,Sphynx,Female,Nala,Refugio Sevilla,Low,3,No,7,Allergies,None,Special skincare
-PET5G6H7I,Dog,Bulldog,Male,Bruno,Albergue Madrid,Medium,4,Yes,5,None,None,None
-PET8J9K0L,Cat,British Shorthair,Female,Lily,Albergue Madrid,Low,2,Yes,4,None,None,None
-PET1M2N3O,Rabbit,Flemish Giant,Male,Thumper,Albergue Madrid,Medium,3,No,6,None,None,Large enclosure
-PET4P5Q6R,Turtle,Russian,Female,Tara,Albergue Madrid,Low,8,No,12,None,None,Special diet
-PET7S8T9U,Hamster,Campbell’s,Male,Chewy,Albergue Madrid,Medium,0.5,Yes,3,None,None,None
-PET0V1W2X,Dog,Dachshund,Female,Sophie,Albergue Madrid,Medium,3,Yes,8,None,None,None
-PET3Y4Z5A,Cat,Scottish Fold,Male,Whiskers,Albergue Madrid,Low,4,No,10,None,None,None
+pet_id,species,breed,gender,name,sheltername,activity_level,age,allergy_friendly,time_in_shelter,disability_current,disability_past,special_needs,image_path
+PET1A2B3C,Dog,Labrador,Male,Max,Shelter Lisboa,High,3,Yes,< 1 year,None,None,None,pet_pics/PET1A2B3C.jpg
+PET4D5E6F,Cat,Siamese,Female,Luna,Shelter Lisboa,Medium,2,No,< 1 year,None,Injured leg,None,pet_pics/PET4D5E6F.jpg
+PET7G8H9I,Rabbit,Lop,Male,Oreo,Shelter Lisboa,Low,1,Yes,< 1 year,None,None,Dietary needs,pet_pics/PET7G8H9I.jpg
+PET0J1K2L,Turtle,Red-Eared Slider,Female,Tina,Shelter Lisboa,Low,5,No,1-2 years,None,None,UV lamp required,pet_pics/PET0J1K2L.jpg
+PET3M4N5O,Hamster,Syrian,Male,Buddy,Shelter Lisboa,Medium,0.5,Yes,< 1 year,None,None,None,pet_pics/PET3M4N5O.jpg
+PET6P7Q8R,Dog,Beagle,Female,Bella,Shelter Lisboa,High,4,No,1-2 years,Limping,None,Physical therapy,pet_pics/PET6P7Q8R.jpg
+PET9S0T1U,Cat,Persian,Male,Simba,Shelter Lisboa,Low,3,Yes,< 1 year,None,None,None,pet_pics/PET9S0T1U.jpg
+PET2V3W4X,Dog,Golden Retriever,Female,Daisy,Abrigo Amigo,High,2,Yes,1-2 years,None,None,None,pet_pics/PET2V3W4X.jpg
+PET5Y6Z7A,Cat,Tabby,Male,Tom,Abrigo Amigo,Medium,1,No,< 1 year,None,None,None,pet_pics/PET5Y6Z7A.jpg
+PET8B9C0D,Rabbit,Netherland Dwarf,Female,Fluffy,Abrigo Amigo,Low,2,Yes,< 1 year,None,None,Dental care,pet_pics/PET8B9C0D.jpg
+PET1E2F3G,Turtle,Box Turtle,Male,Sheldon,Abrigo Amigo,Low,6,No,2+ years,None,None,Special diet,pet_pics/PET1E2F3G.jpg
+PET4H5I6J,Hamster,Roborovski,Female,Nibbles,Abrigo Amigo,Medium,0.3,Yes,< 1 year,None,None,None,pet_pics/PET4H5I6J.jpg
+PET7K8L9M,Dog,Poodle,Male,Charlie,Abrigo Amigo,High,5,Yes,1-2 years,None,Blind,None,pet_pics/PET7K8L9M.jpg
+PET0N1O2P,Cat,Maine Coon,Female,Mia,Abrigo Amigo,Medium,3,No,1-2 years,None,None,Regular grooming,pet_pics/PET0N1O2P.jpg
+PET3Q4R5S,Dog,Husky,Male,Thor,Refúgio Porto,High,4,No,1-2 years,None,None,High exercise needs,pet_pics/PET3Q4R5S.jpg
+PET6T7U8V,Cat,Bengal,Female,Sasha,Refúgio Porto,High,2,Yes,< 1 year,None,None,None,pet_pics/PET6T7U8V.jpg
+PET9W0X1Y,Rabbit,Lionhead,Male,Bouncy,Refúgio Porto,Medium,1,Yes,< 1 year,None,None,None,pet_pics/PET9W0X1Y.jpg
+PET2Z3A4B,Turtle,Hermann’s,Female,Emma,Refúgio Porto,Low,7,No,2+ years,None,None,Heated enclosure,pet_pics/PET2Z3A4B.jpg
+PET5C6D7E,Hamster,Dwarf,Male,Peanut,Refúgio Porto,Medium,0.4,Yes,< 1 year,None,None,None,pet_pics/PET5C6D7E.jpg
+PET8F9G0H,Dog,Boxer,Female,Roxy,Refúgio Porto,High,3,Yes,1-2 years,None,None,None,pet_pics/PET8F9G0H.jpg
+PET1I2J3K,Cat,Ragdoll,Male,Oliver,Refúgio Porto,Low,4,No,1-2 years,None,None,None,pet_pics/PET1I2J3K.jpg
+PET4L5M6N,Dog,German Shepherd,Male,Rex,Refugio Sevilla,High,5,No,1-2 years,None,Amputated leg,Training required,pet_pics/PET4L5M6N.jpg
+PET7O8P9Q,Cat,Abyssinian,Female,Cleo,Refugio Sevilla,Medium,3,Yes,1-2 years,None,None,None,pet_pics/PET7O8P9Q.jpg
+PET0R1S2T,Rabbit,Angora,Male,Snowball,Refugio Sevilla,Low,2,Yes,< 1 year,None,None,Grooming needs,pet_pics/PET0R1S2T.jpg
+PET3U4V5W,Turtle,Slider,Female,Penny,Refugio Sevilla,Low,4,No,1-2 years,None,None,None,pet_pics/PET3U4V5W.jpg
+PET6X7Y8Z,Hamster,Golden,Female,Coco,Refugio Sevilla,Medium,0.6,Yes,< 1 year,None,None,None,pet_pics/PET6X7Y8Z.jpg
+PET9A0B1C,Dog,Chihuahua,Male,Taco,Refugio Sevilla,Medium,2,Yes,< 1 year,None,None,None,pet_pics/PET9A0B1C.jpg
+PET2D3E4F,Cat,Sphynx,Female,Nala,Refugio Sevilla,Low,3,No,1-2 years,Allergies,None,Special skincare,pet_pics/PET2D3E4F.jpg
+PET5G6H7I,Dog,Bulldog,Male,Bruno,Albergue Madrid,Medium,4,Yes,1-2 years,None,None,None,pet_pics/PET5G6H7I.jpg
+PET8J9K0L,Cat,British Shorthair,Female,Lily,Albergue Madrid,Low,2,Yes,< 1 year,None,None,None,pet_pics/PET8J9K0L.jpg
+PET1M2N3O,Rabbit,Flemish Giant,Male,Thumper,Albergue Madrid,Medium,3,No,1-2 years,None,None,Large enclosure,pet_pics/PET1M2N3O.jpg
+PET4P5Q6R,Turtle,Russian,Female,Tara,Albergue Madrid,Low,8,No,2+ years,None,None,Special diet,pet_pics/PET4P5Q6R.jpg
+PET7S8T9U,Hamster,Campbell’s,Male,Chewy,Albergue Madrid,Medium,0.5,Yes,< 1 year,None,None,None,pet_pics/PET7S8T9U.jpg
+PET0V1W2X,Dog,Dachshund,Female,Sophie,Albergue Madrid,Medium,3,Yes,1-2 years,None,None,None,pet_pics/PET0V1W2X.jpg
+PET3Y4Z5A,Cat,Scottish Fold,Male,Whiskers,Albergue Madrid,Low,4,No,2+ years,None,None,None,pet_pics/PET3Y4Z5A.jpg

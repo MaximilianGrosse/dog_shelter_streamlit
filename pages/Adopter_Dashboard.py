@@ -11,7 +11,7 @@ def load_data():
     if os.path.exists("pets.csv"):
         pets_df = pd.read_csv("pets.csv")
     else:
-        pets_df = pd.DataFrame(columns=["pet_id", "species", "breed", "gender", "name", "sheltername", "activity_level", "age", "allergy_friendly", "time_in_shelter", "disability_current", "disability_past", "special_needs"])
+        pets_df = pd.DataFrame(columns=["pet_id", "species", "breed", "gender", "name", "sheltername", "activity_level", "age", "allergy_friendly", "time_in_shelter", "disability_current", "disability_past", "special_needs", "image_path"])
     
     if os.path.exists("adopters.csv"):
         adopters_df = pd.read_csv("adopters.csv")
@@ -128,7 +128,7 @@ st.markdown("Find your furry friend or help pets find loving homes with our plat
 
 # Display image
 if os.path.exists("pics/f2.jpg"):
-    st.image("pics/f2.jpg", caption="Loving Homes", width=300)  # Scaled to ~50% size
+    st.image("pics/f2.jpg", caption="Loving Homes", width=300)
 else:
     st.warning("Image f2.jpg not found. Please ensure it is in the pics/ directory.")
 
@@ -146,20 +146,36 @@ else:
         st.subheader("Recommended Pets")
         recommendations = get_recommendations(user["adopter_id"])
         for pet in recommendations:
-            st.write(f"{pet['name']} ({pet['species']}, {pet['breed']}, {pet['gender']}, Age: {pet['age']})")
-            if st.button(f"Like {pet['name']}", key=pet["pet_id"]):
-                st.success(like_pet(user["adopter_id"], pet["pet_id"]))
+            col1, col2 = st.columns([1, 3])
+            with col1:
+                if pet.get("image_path") and os.path.exists(pet["image_path"]):
+                    st.image(pet["image_path"], caption=pet["name"], width=300)
+                else:
+                    st.write("No image available")
+            with col2:
+                st.write(f"{pet['name']} ({pet['species']}, {pet['breed']}, {pet['gender']}, Age: {pet['age']})")
+                if st.button(f"Like {pet['name']}", key=pet["pet_id"]):
+                    st.success(like_pet(user["adopter_id"], pet["pet_id"]))
 
     elif option == "View Liked Pets":
         st.subheader("Liked Pets")
-        liked_pets = user["liked_pets"].split(",") if user["liked_pets"] else []
+        liked_pets = []
+        if user.get("liked_pets") and isinstance(user["liked_pets"], str) and user["liked_pets"].strip():
+            liked_pets = user["liked_pets"].split(",")
         if not liked_pets or liked_pets == [""]:
-            st.write("No liked pets yet.")
+            st.info("No liked pets yet.")
         else:
             for pet_id in liked_pets:
                 if pet_id:
                     pet = pets_df[pets_df["pet_id"] == pet_id].iloc[0]
-                    st.write(f"{pet['name']} ({pet['species']}, {pet['breed']})")
+                    col1, col2 = st.columns([1, 3])
+                    with col1:
+                        if pet.get("image_path") and os.path.exists(pet["image_path"]):
+                            st.image(pet["image_path"], caption=pet["name"], width=300)
+                        else:
+                            st.write("No image available")
+                    with col2:
+                        st.write(f"{pet['name']} ({pet['species']}, {pet['breed']})")
 
     elif option == "Delete Account":
         st.subheader("Delete Account")

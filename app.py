@@ -17,7 +17,7 @@ def load_data():
     if os.path.exists("pets.csv"):
         pets_df = pd.read_csv("pets.csv")
     else:
-        pets_df = pd.DataFrame(columns=["pet_id", "species", "breed", "gender", "name", "sheltername", "activity_level", "age", "allergy_friendly", "time_in_shelter", "disability_current", "disability_past", "special_needs"])
+        pets_df = pd.DataFrame(columns=["pet_id", "species", "breed", "gender", "name", "sheltername", "activity_level", "age", "allergy_friendly", "time_in_shelter", "disability_current", "disability_past", "special_needs", "image_path"])
     
     if os.path.exists("adopters.csv"):
         adopters_df = pd.read_csv("adopters.csv")
@@ -127,7 +127,8 @@ with col1:
             for field in fields[user_type]:
                 if user_type == "Adopter":
                     if field == "pref_species":
-                        data[field] = st.selectbox("Preferred Species", ["Dog", "Cat", "Turtle", "Rabbit", "Hamster"], key=f"reg_{field}")
+                        species_list = list(pets_df["species"].unique()) if not pets_df.empty else ["Dog", "Cat", "Rabbit", "Turtle", "Hamster"]
+                        data[field] = st.selectbox("Preferred Species", species_list, key=f"reg_{field}")
                     elif field == "age":
                         data[field] = st.selectbox("Age", list(range(18, 100)), key=f"reg_{field}")
                     elif field == "pref_gender":
@@ -156,6 +157,6 @@ with col1:
 with col2:
     # Display image
     if os.path.exists("pics/f1.jpg"):
-        st.image("pics/f1.jpg", caption="Happy Pets", width=300)  # Scaled to ~50% size
+        st.image("pics/f1.jpg", caption="Happy Pets", width=300)
     else:
         st.warning("Image f1.jpg not found. Please ensure it is in the pics/ directory.")
