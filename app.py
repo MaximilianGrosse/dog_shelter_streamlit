@@ -78,30 +78,23 @@ def login_user(user_type, username, password):
 
 # Main app
 st.sidebar.title("Dog Shelter Adoption Platform")
-st.sidebar.markdown("Navigate:")
 
 st.title("Dog Shelter Adoption Platform")
 st.markdown("### Join Our Pet Adoption Community! 🐾")
 st.markdown("Find your furry friend or help pets find loving homes with our platform! ❤️")
 
-# Display images
-if os.path.exists("pics/f1.png") and os.path.exists("pics/f2.png"):
-    col1, col2 = st.columns(2)
-    with col1:
-        st.image("pics/f1.png", caption="Happy Pets", use_column_width=True)
-    with col2:
-        st.image("pics/f2.png", caption="Loving Homes", use_column_width=True)
+# Display image
+if os.path.exists("pics/f1.jpg"):
+    st.image("pics/f1.jpg", caption="Happy Pets", use_column_width=True)
 else:
-    st.warning("Images not found. Please ensure pics/f1.png and pics/f2.png are in the repository.")
+    st.warning("Image f1.jpg not found. Please ensure it is in the pics/ directory.")
 
 # If logged in, redirect to dashboard
 if st.session_state.user is not None:
     if st.session_state.user_type == "Adopter":
-        st.write("Redirecting to Adopter Dashboard...")
-        st.markdown("[Go to Adopter Dashboard](./Adopter_Dashboard)")
+        st.switch_page("pages/Adopter_Dashboard.py")
     else:
-        st.write("Redirecting to Shelter Dashboard...")
-        st.markdown("[Go to Shelter Dashboard](./Shelter_Dashboard)")
+        st.switch_page("pages/Shelter_Dashboard.py")
 else:
     # User type selection
     user_type = st.radio("User Type", ["Adopter", "Shelter"])
@@ -118,8 +111,11 @@ else:
             if success:
                 st.session_state.user = result
                 st.session_state.user_type = user_type
-                st.success("Login successful! Redirect to dashboard.")
-                st.rerun()
+                st.success("Login successful! Redirecting to dashboard...")
+                if user_type == "Adopter":
+                    st.switch_page("pages/Adopter_Dashboard.py")
+                else:
+                    st.switch_page("pages/Shelter_Dashboard.py")
             else:
                 st.error(result)
 

@@ -56,27 +56,49 @@ def delete_shelter_account(shelter_id):
 
 # Shelter dashboard
 st.sidebar.title("Dog Shelter Adoption Platform")
-st.sidebar.markdown("Navigate:")
+
+# Logout button styling
+st.markdown("""
+    <style>
+    .logout-button {
+        background-color: red;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 4px;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
 st.title("Shelter Dashboard")
 st.markdown("### Join Our Pet Adoption Community! 🐾")
 st.markdown("Find your furry friend or help pets find loving homes with our platform! ❤️")
 
-# Display images
-if os.path.exists("pics/f1.png") and os.path.exists("pics/f2.png"):
-    col1, col2 = st.columns(2)
-    with col1:
-        st.image("pics/f1.png", caption="Happy Pets", use_column_width=True)
-    with col2:
-        st.image("pics/f2.png", caption="Loving Homes", use_column_width=True)
+# Display image
+if os.path.exists("pics/f3.jpg"):
+    st.image("pics/f3.jpg", caption="Shelter Heroes", use_column_width=True)
 else:
-    st.warning("Images not found. Please ensure pics/f1.png and pics/f2.png are in the repository.")
+    st.warning("Image f3.jpg not found. Please ensure it is in the pics/ directory.")
 
 if st.session_state.user is None or st.session_state.user_type != "Shelter":
     st.error("Please log in as a Shelter.")
     st.markdown("[Go to Login/Registration](./)")
 else:
     user = st.session_state.user
+    # Place logout button in top right
+    col1, col2 = st.columns([4, 1])
+    with col2:
+        if st.button("Logout", key="logout_button"):
+            st.session_state.user = None
+            st.session_state.user_type = None
+            st.switch_page("app.py")
+
     st.subheader(f"Welcome, {user['name']}")
 
     # Menu
@@ -113,9 +135,4 @@ else:
             st.success(message)
             st.session_state.user = None
             st.session_state.user_type = None
-            st.rerun()
-
-    if st.button("Logout"):
-        st.session_state.user = None
-        st.session_state.user_type = None
-        st.rerun()
+            st.switch_page("app.py")
