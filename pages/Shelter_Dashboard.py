@@ -3,6 +3,9 @@ import pandas as pd
 import uuid
 import os
 
+# Set page config first
+st.set_page_config(page_title="Shelter Dashboard", layout="wide")
+
 # Load CSVs
 @st.cache_data
 def load_data():
@@ -52,9 +55,8 @@ def delete_shelter_account(shelter_id):
     return "Shelter account and associated pets deleted successfully"
 
 # Shelter dashboard
-st.set_page_config(page_title="Shelter Dashboard", layout="wide")
 st.sidebar.title("Dog Shelter Adoption Platform")
-st.sidebar.markdown("Navigate:")  # Custom sidebar label
+st.sidebar.markdown("Navigate:")
 
 st.title("Shelter Dashboard")
 st.markdown("### Join Our Pet Adoption Community! 🐾")

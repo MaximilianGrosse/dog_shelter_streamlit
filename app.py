@@ -3,6 +3,9 @@ import pandas as pd
 import uuid
 import os
 
+# Set page config first
+st.set_page_config(page_title="Login/Registration", layout="wide")
+
 # Initialize session state
 if "user" not in st.session_state:
     st.session_state.user = None
@@ -74,9 +77,8 @@ def login_user(user_type, username, password):
     return False, "Invalid credentials"
 
 # Main app
-st.set_page_config(page_title="Dog Shelter Adoption Platform", layout="wide")
 st.sidebar.title("Dog Shelter Adoption Platform")
-st.sidebar.markdown("Navigate:")  # Custom sidebar label
+st.sidebar.markdown("Navigate:")
 
 st.title("Dog Shelter Adoption Platform")
 st.markdown("### Join Our Pet Adoption Community! 🐾")

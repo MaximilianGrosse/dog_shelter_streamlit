@@ -2,6 +2,9 @@ import streamlit as st
 import pandas as pd
 import os
 
+# Set page config first
+st.set_page_config(page_title="Adopter Dashboard", layout="wide")
+
 # Load CSVs
 @st.cache_data
 def load_data():
@@ -88,9 +91,8 @@ def delete_adopter_account(adopter_id):
     return "Adopter account deleted successfully"
 
 # Adopter dashboard
-st.set_page_config(page_title="Adopter Dashboard", layout="wide")
 st.sidebar.title("Dog Shelter Adoption Platform")
-st.sidebar.markdown("Navigate:")  # Custom sidebar label
+st.sidebar.markdown("Navigate:")
 
 st.title("Adopter Dashboard")
 st.markdown("### Join Our Pet Adoption Community! 🐾")
