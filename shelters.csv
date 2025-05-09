@@ -1,2 +1,6 @@
 shelter_id,name,address,email,phone,username,password
-SHEL034643,Shelter Lisboa,awdkjan,awdaw,12308123,shelterlisboa,456def
+SHEL034643,Shelter Lisboa,"Rua da Esperança 23, Lisboa, Portugal",lisboa_pets123@gmail.com,+351912345678,shelterlisboa,456def
+SHELA1B2C3,Abrigo Amigo,"Avenida da Liberdade 45, Lisboa, Portugal",amigo_abrigo2023@outlook.com,+351923456789,abrigoamigo,789ghi
+SHELD4E5F6,Refúgio Porto,"Rua de Santa Catarina 12, Porto, Portugal",porto_refugio@yahoo.com,+351934567890,refugioporto,012jkl
+SHELG7H8I9,Refugio Sevilla,"Calle Sierpes 67, Sevilla, Spain",sevilla_refugio22@gmail.com,+34612345678,refugiosevilla,345mno
+SHELJ0K1L2,Albergue Madrid,"Calle Gran Vía 89, Madrid, Spain",madrid_albergue@protonmail.com,+34623456789,alberguemadrid,678pqr
