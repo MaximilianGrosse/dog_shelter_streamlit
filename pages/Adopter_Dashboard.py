@@ -58,10 +58,14 @@ def calculate_match(adopter, pet):
 def get_recommendations(adopter_id):
     global adopters_df, pets_df
     adopter = adopters_df[adopters_df["adopter_id"] == adopter_id].iloc[0]
+    liked_pets = []
+    if isinstance(adopter.get("liked_pets"), str) and adopter["liked_pets"].strip():
+        liked_pets = adopter["liked_pets"].split(",")
     scores = []
     for _, pet in pets_df.iterrows():
-        score = calculate_match(adopter, pet)
-        scores.append((pet["pet_id"], score))
+        if pet["pet_id"] not in liked_pets:
+            score = calculate_match(adopter, pet)
+            scores.append((pet["pet_id"], score))
     scores.sort(key=lambda x: x[1], reverse=True)
     top_pets = [pets_df[pets_df["pet_id"] == pet_id].iloc[0] for pet_id, _ in scores[:5]]
     return top_pets
@@ -71,17 +75,16 @@ def like_pet(adopter_id, pet_id):
     global adopters_df
     adopter_idx = adopters_df.index[adopters_df["adopter_id"] == adopter_id].tolist()[0]
     current_likes = adopters_df.at[adopter_idx, "liked_pets"]
-    if current_likes:
+    likes_list = []
+    if isinstance(current_likes, str) and current_likes.strip():
         likes_list = current_likes.split(",")
-        if pet_id not in likes_list:
-            likes_list.append(pet_id)
-            adopters_df.at[adopter_idx, "liked_pets"] = ",".join(likes_list)
-    else:
-        adopters_df.at[adopter_idx, "liked_pets"] = pet_id
+    if pet_id not in likes_list:
+        likes_list.append(pet_id)
+        adopters_df.at[adopter_idx, "liked_pets"] = ",".join(likes_list)
     save_data()
     pet = pets_df[pets_df["pet_id"] == pet_id].iloc[0]
     shelter = shelters_df[shelters_df["name"] == pet["sheltername"]].iloc[0]
-    return f"Shelter Contact:\nName: {shelter['name']}\nEmail: {shelter['email']}\nPhone: {shelter['phone']}"
+    return f"{pet['name']} was liked by you. The contact information of the shelter located in {shelter['address']} is {shelter['phone']} and {shelter['email']}. Please don't hesitate to contact them!"
 
 # Delete adopter account
 def delete_adopter_account(adopter_id):
@@ -139,28 +142,50 @@ else:
     user = st.session_state.user
     st.subheader(f"Welcome, {user['name']}")
 
+    # Initialize session state for recommendation index
+    if "recommendation_index" not in st.session_state:
+        st.session_state.recommendation_index = 0
+    if "show_contact_message" not in st.session_state:
+        st.session_state.show_contact_message = False
+    if "contact_message" not in st.session_state:
+        st.session_state.contact_message = ""
+
     # Menu
     option = st.selectbox("Choose an action", ["View Recommended Pets", "View Liked Pets", "Delete Account"])
 
     if option == "View Recommended Pets":
         st.subheader("Recommended Pets")
         recommendations = get_recommendations(user["adopter_id"])
-        for pet in recommendations:
-            col1, col2 = st.columns([1, 3])
-            with col1:
-                if pet.get("image_path") and os.path.exists(pet["image_path"]):
-                    st.image(pet["image_path"], caption=pet["name"], width=300)
-                else:
-                    st.write("No image available")
-            with col2:
-                st.write(f"{pet['name']} ({pet['species']}, {pet['breed']}, {pet['gender']}, Age: {pet['age']})")
-                if st.button(f"Like {pet['name']}", key=pet["pet_id"]):
-                    st.success(like_pet(user["adopter_id"], pet["pet_id"]))
+        
+        if not recommendations:
+            st.info("No more pets to recommend.")
+        elif st.session_state.recommendation_index >= len(recommendations):
+            st.info("No more pets to recommend.")
+        else:
+            if not st.session_state.show_contact_message:
+                pet = recommendations[st.session_state.recommendation_index]
+                col1, col2 = st.columns([1, 3])
+                with col1:
+                    if pet.get("image_path") and os.path.exists(pet["image_path"]):
+                        st.image(pet["image_path"], caption=pet["name"], width=300)
+                    else:
+                        st.write("No image available")
+                with col2:
+                    st.write(f"{pet['name']} ({pet['species']}, {pet['breed']}, {pet['gender']}, Age: {pet['age']})")
+                    if st.button(f"Like {pet['name']}", key=pet["pet_id"]):
+                        message = like_pet(user["adopter_id"], pet["pet_id"])
+                        st.session_state.show_contact_message = True
+                        st.session_state.contact_message = message
+                        st.session_state.recommendation_index += 1
+            else:
+                st.success(st.session_state.contact_message)
+                if st.button("Review other pets"):
+                    st.session_state.show_contact_message = False
 
     elif option == "View Liked Pets":
         st.subheader("Liked Pets")
         liked_pets = []
-        if user.get("liked_pets") and isinstance(user["liked_pets"], str) and user["liked_pets"].strip():
+        if isinstance(user.get("liked_pets"), str) and user["liked_pets"].strip():
             liked_pets = user["liked_pets"].split(",")
         if not liked_pets or liked_pets == [""]:
             st.info("No liked pets yet.")

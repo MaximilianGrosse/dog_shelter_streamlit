@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import uuid
 import os
+from PIL import Image
 
 # Set page config first
 st.set_page_config(page_title="Shelter Dashboard", layout="wide")
@@ -37,7 +38,7 @@ def save_data():
 
 # Breed lists
 BREEDS = {
-    "Dog": ["Labrador", "Golden Retriever", "German Shepherd", "Beagle", "Bulldog", "Poodle", "Husky", "Chihuahua", "Dachshund", "Boxer", "Rottweiler", "Shih Tzu", "Doberman", "Corgi", "Great Dane"],
+    "Dog": ["Labrador", "Golden Retriever", "German Wyrd", "Beagle", "Bulldog", "Poodle", "Husky", "Chihuahua", "Dachshund", "Boxer", "Rottweiler", "Shih Tzu", "Doberman", "Corgi", "Great Dane"],
     "Cat": ["Siamese", "Persian", "Maine Coon", "Tabby", "Bengal", "Ragdoll", "Abyssinian", "Sphynx", "British Shorthair", "Scottish Fold", "Burmese", "Oriental", "Norwegian Forest", "Devon Rex", "Manx"],
     "Rabbit": ["Lop", "Netherland Dwarf", "Lionhead", "Angora", "Flemish Giant", "Rex", "Mini Lop", "Dutch", "Himalayan", "Chinchilla"],
     "Turtle": ["Red-Eared Slider", "Box Turtle", "Hermann’s", "Russian", "Slider", "Painted Turtle", "Map Turtle", "Musk Turtle"],
@@ -53,8 +54,9 @@ def add_pet(shelter_id, pet_data, image_file=None):
     if image_file:
         image_path = f"pet_pics/{pet_data['pet_id']}.jpg"
         os.makedirs("pet_pics", exist_ok=True)
-        with open(image_path, "wb") as f:
-            f.write(image_file.read())
+        # Convert and save as JPG
+        img = Image.open(image_file)
+        img.convert("RGB").save(image_path, "JPEG")
         pet_data["image_path"] = image_path
     else:
         pet_data["image_path"] = ""
@@ -69,8 +71,9 @@ def edit_pet(pet_id, pet_data, image_file=None):
     if image_file:
         image_path = f"pet_pics/{pet_id}.jpg"
         os.makedirs("pet_pics", exist_ok=True)
-        with open(image_path, "wb") as f:
-            f.write(image_file.read())
+        # Convert and save as JPG
+        img = Image.open(image_file)
+        img.convert("RGB").save(image_path, "JPEG")
         pet_data["image_path"] = image_path
     elif "image_path" not in pet_data:
         pet_data["image_path"] = pets_df.at[pet_idx, "image_path"]
@@ -150,27 +153,26 @@ else:
         else:
             pet_data["species"] = st.selectbox("Species", default_species, key="pet_species")
         
-        # Breed search
+        # Breed search and selection
         if pet_data["species"] in BREEDS:
             breed_search = st.text_input("Search Breed", key="breed_search")
-            breed_options = [b for b in BREEDS[pet_data["species"]] if breed_search.lower() in b.lower()]
-            pet_data["breed"] = st.selectbox("Breed", breed_options if breed_options else BREEDS[pet_data["species"]], key="pet_breed")
+            breed_options = [b for b in BREEDS[pet_data["species"]] if breed_search.lower() in b.lower()] or BREEDS[pet_data["species"]]
+            pet_data["breed"] = st.selectbox("Breed", breed_options, key="pet_breed")
         else:
             pet_data["breed"] = st.text_input("Breed", key="pet_breed")
         
         pet_data["gender"] = st.selectbox("Gender", ["Male", "Female"], key="pet_gender")
         pet_data["name"] = st.text_input("Name", key="pet_name")
         pet_data["activity_level"] = st.selectbox("Activity Level", ["High", "Medium", "Low"], key="pet_activity_level")
-        pet_data["age"] = st.selectbox("Age", list(range(0, 16)), key="pet_age")
+        age_options = list(range(0, 15)) + ["15+"]
+        pet_data["age"] = st.selectbox("Age", age_options, key="pet_age")
         pet_data["allergy_friendly"] = st.selectbox("Allergy Friendly", ["Yes", "No"], key="pet_allergy_friendly")
         pet_data["time_in_shelter"] = st.selectbox("Time in Shelter", ["< 1 year", "1-2 years", "2+ years"], key="pet_time_in_shelter")
         pet_data["disability_current"] = st.text_input("Disability Current", key="pet_disability_current")
         pet_data["disability_past"] = st.text_input("Disability Past", key="pet_disability_past")
         pet_data["special_needs"] = st.text_input("Special Needs", key="pet_special_needs")
         
-        image_file = None
-        if pet_data["species"] == "Cat":
-            image_file = st.file_uploader("Upload Cat Image (JPG)", type=["jpg"], key="cat_image")
+        image_file = st.file_uploader("Upload Pet Image (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"], key="pet_image")
         
         if st.button("Add Pet"):
             message = add_pet(user["shelter_id"], pet_data, image_file)
@@ -214,22 +216,23 @@ else:
             
             if pet_data["species"] in BREEDS:
                 breed_search = st.text_input("Search Breed", key="edit_breed_search")
-                breed_options = [b for b in BREEDS[pet_data["species"]] if breed_search.lower() in b.lower()]
-                pet_data["breed"] = st.selectbox("Breed", breed_options if breed_options else BREEDS[pet_data["species"]], index=0 if not breed_options else BREEDS[pet_data["species"]].index(pet["breed"]) if pet["breed"] in BREEDS[pet_data["species"]] else 0, key="edit_pet_breed")
+                breed_options = [b for b in BREEDS[pet_data["species"]] if breed_search.lower() in b.lower()] or BREEDS[pet_data["species"]]
+                pet_data["breed"] = st.selectbox("Breed", breed_options, index=breed_options.index(pet["breed"]) if pet["breed"] in breed_options else 0, key="edit_pet_breed")
             else:
                 pet_data["breed"] = st.text_input("Breed", value=pet["breed"], key="edit_pet_breed")
             
             pet_data["gender"] = st.selectbox("Gender", ["Male", "Female"], index=["Male", "Female"].index(pet["gender"]), key="edit_pet_gender")
             pet_data["name"] = st.text_input("Name", value=pet["name"], key="edit_pet_name")
             pet_data["activity_level"] = st.selectbox("Activity Level", ["High", "Medium", "Low"], index=["High", "Medium", "Low"].index(pet["activity_level"]), key="edit_pet_activity_level")
-            pet_data["age"] = st.selectbox("Age", list(range(0, 16)), index=int(pet["age"]), key="edit_pet_age")
+            age_options = list(range(0, 15)) + ["15+"]
+            pet_data["age"] = st.selectbox("Age", age_options, index=age_options.index(pet["age"]) if pet["age"] in age_options else len(age_options)-1, key="edit_pet_age")
             pet_data["allergy_friendly"] = st.selectbox("Allergy Friendly", ["Yes", "No"], index=["Yes", "No"].index(pet["allergy_friendly"]), key="edit_pet_allergy_friendly")
             pet_data["time_in_shelter"] = st.selectbox("Time in Shelter", ["< 1 year", "1-2 years", "2+ years"], index=["< 1 year", "1-2 years", "2+ years"].index(pet["time_in_shelter"]), key="edit_pet_time_in_shelter")
             pet_data["disability_current"] = st.text_input("Disability Current", value=pet["disability_current"], key="edit_pet_disability_current")
             pet_data["disability_past"] = st.text_input("Disability Past", value=pet["disability_past"], key="edit_pet_disability_past")
             pet_data["special_needs"] = st.text_input("Special Needs", value=pet["special_needs"], key="edit_pet_special_needs")
             
-            image_file = st.file_uploader("Upload New Pet Image (JPG)", type=["jpg"], key="edit_pet_image")
+            image_file = st.file_uploader("Upload New Pet Image (JPG, JPEG, PNG)", type=["jpg", "jpeg", "png"], key="edit_pet_image")
             
             if st.button("Update Pet"):
                 message = edit_pet(pet_id, pet_data, image_file)
