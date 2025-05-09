@@ -72,17 +72,27 @@ st.markdown("""
         margin: 4px 2px;
         cursor: pointer;
         border-radius: 4px;
+        vertical-align: middle;
     }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("Shelter Dashboard")
+# Header with title and logout button
+col1, col2 = st.columns([4, 1])
+with col1:
+    st.title("Shelter Dashboard")
+with col2:
+    if st.button("Logout", key="logout_button"):
+        st.session_state.user = None
+        st.session_state.user_type = None
+        st.switch_page("app.py")
+
 st.markdown("### Join Our Pet Adoption Community! 🐾")
 st.markdown("Find your furry friend or help pets find loving homes with our platform! ❤️")
 
 # Display image
 if os.path.exists("pics/f3.jpg"):
-    st.image("pics/f3.jpg", caption="Shelter Heroes", use_column_width=True)
+    st.image("pics/f3.jpg", caption="Shelter Heroes", width=300)  # Scaled to ~50% size
 else:
     st.warning("Image f3.jpg not found. Please ensure it is in the pics/ directory.")
 
@@ -91,14 +101,6 @@ if st.session_state.user is None or st.session_state.user_type != "Shelter":
     st.markdown("[Go to Login/Registration](./)")
 else:
     user = st.session_state.user
-    # Place logout button in top right
-    col1, col2 = st.columns([4, 1])
-    with col2:
-        if st.button("Logout", key="logout_button"):
-            st.session_state.user = None
-            st.session_state.user_type = None
-            st.switch_page("app.py")
-
     st.subheader(f"Welcome, {user['name']}")
 
     # Menu
