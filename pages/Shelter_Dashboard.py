@@ -52,10 +52,27 @@ def delete_shelter_account(shelter_id):
     return "Shelter account and associated pets deleted successfully"
 
 # Shelter dashboard
+st.set_page_config(page_title="Shelter Dashboard", layout="wide")
+st.sidebar.title("Dog Shelter Adoption Platform")
+st.sidebar.markdown("Navigate:")  # Custom sidebar label
+
 st.title("Shelter Dashboard")
+st.markdown("### Join Our Pet Adoption Community! 🐾")
+st.markdown("Find your furry friend or help pets find loving homes with our platform! ❤️")
+
+# Display images
+if os.path.exists("pics/f1.png") and os.path.exists("pics/f2.png"):
+    col1, col2 = st.columns(2)
+    with col1:
+        st.image("pics/f1.png", caption="Happy Pets", use_column_width=True)
+    with col2:
+        st.image("pics/f2.png", caption="Loving Homes", use_column_width=True)
+else:
+    st.warning("Images not found. Please ensure pics/f1.png and pics/f2.png are in the repository.")
+
 if st.session_state.user is None or st.session_state.user_type != "Shelter":
     st.error("Please log in as a Shelter.")
-    st.markdown("[Go to Login](./)")
+    st.markdown("[Go to Login/Registration](./)")
 else:
     user = st.session_state.user
     st.subheader(f"Welcome, {user['name']}")

@@ -63,14 +63,34 @@ def login_user(user_type, username, password):
         user = adopters_df[(adopters_df["username"] == username) & (adopters_df["password"] == password)]
         if not user.empty:
             return True, user.iloc[0]
+        else:
+            st.write(f"Debug: Adopter username '{username}' not found or password incorrect.")
     else:  # Shelter
         user = shelters_df[(shelters_df["username"] == username) & (shelters_df["password"] == password)]
         if not user.empty:
             return True, user.iloc[0]
+        else:
+            st.write(f"Debug: Shelter username '{username}' not found or password incorrect.")
     return False, "Invalid credentials"
 
 # Main app
+st.set_page_config(page_title="Dog Shelter Adoption Platform", layout="wide")
+st.sidebar.title("Dog Shelter Adoption Platform")
+st.sidebar.markdown("Navigate:")  # Custom sidebar label
+
 st.title("Dog Shelter Adoption Platform")
+st.markdown("### Join Our Pet Adoption Community! 🐾")
+st.markdown("Find your furry friend or help pets find loving homes with our platform! ❤️")
+
+# Display images
+if os.path.exists("pics/f1.png") and os.path.exists("pics/f2.png"):
+    col1, col2 = st.columns(2)
+    with col1:
+        st.image("pics/f1.png", caption="Happy Pets", use_column_width=True)
+    with col2:
+        st.image("pics/f2.png", caption="Loving Homes", use_column_width=True)
+else:
+    st.warning("Images not found. Please ensure pics/f1.png and pics/f2.png are in the repository.")
 
 # If logged in, redirect to dashboard
 if st.session_state.user is not None:
@@ -109,11 +129,26 @@ else:
         }
         data = {}
         for field in fields[user_type]:
-            if field == "allergy_friendly":
-                data[field] = st.selectbox("Allergy Friendly", ["Yes", "No"], key=f"reg_{field}")
-            elif field == "activity_level":
-                data[field] = st.selectbox("Activity Level", ["High", "Medium", "Low"], key=f"reg_{field}")
-            else:
+            if user_type == "Adopter":
+                if field == "pref_species":
+                    data[field] = st.selectbox("Preferred Species", ["Dog", "Cat", "Turtle", "Rabbit", "Hamster"], key=f"reg_{field}")
+                elif field == "age":
+                    data[field] = st.selectbox("Age", list(range(18, 100)), key=f"reg_{field}")
+                elif field == "pref_gender":
+                    data[field] = st.selectbox("Preferred Gender", ["Male", "Female"], key=f"reg_{field}")
+                elif field == "house":
+                    data[field] = st.selectbox("House", ["Yes", "No"], key=f"reg_{field}")
+                elif field == "garden":
+                    data[field] = st.selectbox("Garden", ["Yes", "No"], key=f"reg_{field}")
+                elif field == "allergy_friendly":
+                    data[field] = st.selectbox("Allergy Friendly", ["Yes", "No"], key=f"reg_{field}")
+                elif field == "activity_level":
+                    data[field] = st.selectbox("Activity Level", ["High", "Medium", "Low"], key=f"reg_{field}")
+                elif field == "apartment_size":
+                    data[field] = st.number_input("Apartment Size in qm", min_value=0, step=1, key=f"reg_{field}")
+                else:
+                    data[field] = st.text_input(field.capitalize(), key=f"reg_{field}")
+            else:  # Shelter
                 data[field] = st.text_input(field.capitalize(), key=f"reg_{field}")
         if st.button("Register"):
             success, message = register_user(user_type, data)

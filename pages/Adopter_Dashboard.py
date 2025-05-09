@@ -44,7 +44,7 @@ def calculate_match(adopter, pet):
     if adopter["allergy_friendly"] == "Yes" and pet["allergy_friendly"] == "Yes":
         score += 0.2
     space_suitable = False
-    apartment_size = float(adopter["apartment_size"]) if adopter["apartment_size"] and adopter["apartment_size"].strip() else 0
+    apartment_size = float(adopter["apartment_size"]) if adopter["apartment_size"] and str(adopter["apartment_size"]).strip() else 0
     if pet["activity_level"] == "Low" or (adopter["house"] == "Yes" or adopter["garden"] == "Yes") or apartment_size >= 50:
         space_suitable = True
     if space_suitable and not pet["special_needs"]:
@@ -88,10 +88,27 @@ def delete_adopter_account(adopter_id):
     return "Adopter account deleted successfully"
 
 # Adopter dashboard
+st.set_page_config(page_title="Adopter Dashboard", layout="wide")
+st.sidebar.title("Dog Shelter Adoption Platform")
+st.sidebar.markdown("Navigate:")  # Custom sidebar label
+
 st.title("Adopter Dashboard")
+st.markdown("### Join Our Pet Adoption Community! 🐾")
+st.markdown("Find your furry friend or help pets find loving homes with our platform! ❤️")
+
+# Display images
+if os.path.exists("pics/f1.png") and os.path.exists("pics/f2.png"):
+    col1, col2 = st.columns(2)
+    with col1:
+        st.image("pics/f1.png", caption="Happy Pets", use_column_width=True)
+    with col2:
+        st.image("pics/f2.png", caption="Loving Homes", use_column_width=True)
+else:
+    st.warning("Images not found. Please ensure pics/f1.png and pics/f2.png are in the repository.")
+
 if st.session_state.user is None or st.session_state.user_type != "Adopter":
     st.error("Please log in as an Adopter.")
-    st.markdown("[Go to Login](./)")
+    st.markdown("[Go to Login/Registration](./)")
 else:
     user = st.session_state.user
     st.subheader(f"Welcome, {user['name']}")
