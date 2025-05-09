@@ -16,7 +16,7 @@ def load_data():
     if os.path.exists("adopters.csv"):
         adopters_df = pd.read_csv("adopters.csv")
     else:
-        adopters_df = pd.DataFrame(columns=["adopter_id", "name", "country", "age", "pref_species", "pref_gender", "house", "garden", "activity_level", "allergy_friendly", "apartment_size", "username", "password", "liked_pets"])
+        adopters_df = pd.DataFrame(columns=["adopter_id", "name", "country", "age", "pref_species", "pref_gender", "house", "garden", "activity_level", "allergy_friendly", "apartment_size", "username", "password", "liked_pets", "skipped_pets"])
     
     if os.path.exists("shelters.csv"):
         shelters_df = pd.read_csv("shelters.csv")
@@ -59,11 +59,15 @@ def get_recommendations(adopter_id):
     global adopters_df, pets_df
     adopter = adopters_df[adopters_df["adopter_id"] == adopter_id].iloc[0]
     liked_pets = []
+    skipped_pets = []
     if isinstance(adopter.get("liked_pets"), str) and adopter["liked_pets"].strip():
         liked_pets = adopter["liked_pets"].split(",")
+    if isinstance(adopter.get("skipped_pets"), str) and adopter["skipped_pets"].strip():
+        skipped_pets = adopter["skipped_pets"].split(",")
+    excluded_pets = liked_pets + skipped_pets
     scores = []
     for _, pet in pets_df.iterrows():
-        if pet["pet_id"] not in liked_pets:
+        if pet["pet_id"] not in excluded_pets:
             score = calculate_match(adopter, pet)
             scores.append((pet["pet_id"], score))
     scores.sort(key=lambda x: x[1], reverse=True)
@@ -84,7 +88,23 @@ def like_pet(adopter_id, pet_id):
     save_data()
     pet = pets_df[pets_df["pet_id"] == pet_id].iloc[0]
     shelter = shelters_df[shelters_df["name"] == pet["sheltername"]].iloc[0]
-    return f"{pet['name']} was liked by you. The contact information of the shelter located in {shelter['address']} is {shelter['phone']} and {shelter['email']}. Please don't hesitate to contact them!"
+    phone = shelter["phone"]
+    formatted_phone = f"+{phone[:3]} {phone[3:]}"
+    return f"{pet['name']} was liked by you. The contact information of the shelter located in {shelter['address']} is phone number {formatted_phone} and email {shelter['email']}. Please don't hesitate to contact them!"
+
+# Skip a pet
+def skip_pet(adopter_id, pet_id):
+    global adopters_df
+    adopter_idx = adopters_df.index[adopters_df["adopter_id"] == adopter_id].tolist()[0]
+    current_skips = adopters_df.at[adopter_idx, "skipped_pets"]
+    skips_list = []
+    if isinstance(current_skips, str) and current_skips.strip():
+        skips_list = current_skips.split(",")
+    if pet_id not in skips_list:
+        skips_list.append(pet_id)
+        adopters_df.at[adopter_idx, "skipped_pets"] = ",".join(skips_list)
+    save_data()
+    return f"{pets_df[pets_df['pet_id'] == pet_id].iloc[0]['name']} has been skipped."
 
 # Delete adopter account
 def delete_adopter_account(adopter_id):
@@ -131,7 +151,7 @@ st.markdown("Find your furry friend or help pets find loving homes with our plat
 
 # Display image
 if os.path.exists("pics/f2.jpg"):
-    st.image("pics/f2.jpg", caption="Loving Homes", width=300)
+    st множествоimage("pics/f2.jpg", caption="Loving Homes", width=300)
 else:
     st.warning("Image f2.jpg not found. Please ensure it is in the pics/ directory.")
 
@@ -172,11 +192,18 @@ else:
                         st.write("No image available")
                 with col2:
                     st.write(f"{pet['name']} ({pet['species']}, {pet['breed']}, {pet['gender']}, Age: {pet['age']})")
-                    if st.button(f"Like {pet['name']}", key=pet["pet_id"]):
-                        message = like_pet(user["adopter_id"], pet["pet_id"])
-                        st.session_state.show_contact_message = True
-                        st.session_state.contact_message = message
-                        st.session_state.recommendation_index += 1
+                    col_like, col_skip = st.columns(2)
+                    with col_like:
+                        if st.button(f"Like {pet['name']}", key=f"like_{pet['pet_id']}"):
+                            message = like_pet(user["adopter_id"], pet["pet_id"])
+                            st.session_state.show_contact_message = True
+                            st.session_state.contact_message = message
+                            st.session_state.recommendation_index += 1
+                    with col_skip:
+                        if st.button(f"Skip {pet['name']}", key=f"skip_{pet['pet_id']}"):
+                            message = skip_pet(user["adopter_id"], pet["pet_id"])
+                            st.session_state.recommendation_index += 1
+                            st.info(message)
             else:
                 st.success(st.session_state.contact_message)
                 if st.button("Review other pets"):
@@ -192,15 +219,30 @@ else:
         else:
             for pet_id in liked_pets:
                 if pet_id:
-                    pet = pets_df[pets_df["pet_id"] == pet_id].iloc[0]
-                    col1, col2 = st.columns([1, 3])
-                    with col1:
-                        if pet.get("image_path") and os.path.exists(pet["image_path"]):
-                            st.image(pet["image_path"], caption=pet["name"], width=300)
-                        else:
-                            st.write("No image available")
-                    with col2:
-                        st.write(f"{pet['name']} ({pet['species']}, {pet['breed']})")
+                    pet_data = pets_df[pets_df["pet_id"] == pet_id]
+                    if not pet_data.empty:
+                        pet = pet_data.iloc[0]
+                        shelter_data = shelters_df[shelters_df["name"] == pet["sheltername"]]
+                        if not shelter_data.empty:
+                            shelter = shelter_data.iloc[0]
+                            phone = shelter["phone"]
+                            formatted_phone = f"+{phone[:3]} {phone[3:]}"
+                            col1, col2 = st.columns([1, 3])
+                            with col1:
+                                if pet.get("image_path") and os.path.exists(pet["image_path"]):
+                                    st.image(pet["image_path"], caption=pet["name"], width=300)
+                                else:
+                                    st.write("No image available")
+                            with col2:
+                                st.write(f"**{pet['name']}** ({pet['species']}, {pet['breed']}, {pet['gender']}, Age: {pet['age']})")
+                                st.write(f"**Shelter**: {shelter['name']}")
+                                st.write(f"**Address**: {shelter['address']}")
+                                st.write(f"**Phone**: {formatted_phone}")
+                                st.write(f"**Email**: {shelter['email']}")
+                    else:
+                        st.warning(f"Pet with ID {pet_id} no longer available.")
+                else:
+                    st.warning("Invalid pet ID in liked pets.")
 
     elif option == "Delete Account":
         st.subheader("Delete Account")

@@ -22,7 +22,7 @@ def load_data():
     if os.path.exists("adopters.csv"):
         adopters_df = pd.read_csv("adopters.csv")
     else:
-        adopters_df = pd.DataFrame(columns=["adopter_id", "name", "country", "age", "pref_species", "pref_gender", "house", "garden", "activity_level", "allergy_friendly", "apartment_size", "username", "password", "liked_pets"])
+        adopters_df = pd.DataFrame(columns=["adopter_id", "name", "country", "age", "pref_species", "pref_gender", "house", "garden", "activity_level", "allergy_friendly", "apartment_size", "username", "password", "liked_pets", "skipped_pets"])
     
     if os.path.exists("shelters.csv"):
         shelters_df = pd.read_csv("shelters.csv")
@@ -49,6 +49,7 @@ def register_user(user_type, data):
             return False, "Username already exists"
         data["adopter_id"] = f"ADOP{uuid.uuid4().hex[:6].upper()}"
         data["liked_pets"] = ""
+        data["skipped_pets"] = ""
         adopters_df = pd.concat([adopters_df, pd.DataFrame([data])], ignore_index=True)
     else:  # Shelter
         if data["username"] in shelters_df["username"].values:
