@@ -115,6 +115,7 @@ with col1:
                 if success:
                     st.session_state.user = result
                     st.session_state.user_type = user_type
+                    save_data()
                     st.success("Login successful! Redirecting to dashboard...")
                     if user_type == "Adopter":
                         st.switch_page("pages/Adopter_Dashboard.py")
@@ -159,7 +160,14 @@ with col1:
             if st.button("Register"):
                 success, message = register_user(user_type, data)
                 if success:
-                    st.success(message)
+                    st.session_state.user = data
+                    st.session_state.user_type = user_type
+                    save_data()
+                    st.success(message + " Redirecting to dashboard...")
+                    if user_type == "Adopter":
+                        st.switch_page("pages/Adopter_Dashboard.py")
+                    else:
+                        st.switch_page("pages/Shelter_Dashboard.py")
                 else:
                     st.error(message)
 

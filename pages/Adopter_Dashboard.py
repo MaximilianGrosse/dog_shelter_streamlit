@@ -141,16 +141,13 @@ st.markdown("""
         vertical-align: middle;
     }
     .pet-description {
-        margin-left: 80px;
+        margin-left: 20px;
     }
     .button-container {
-        padding-left: 70px;
+        margin-left: 20px;
     }
     .image-column {
-        margin-right: 30px;
-    }
-    .description-column {
-        min-width: 500px;
+        margin-right: 20px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -203,7 +200,7 @@ else:
         else:
             if not st.session_state.show_contact_message:
                 pet = recommendations[st.session_state.recommendation_index]
-                col1, col2 = st.columns([1, 6])
+                col1, col2 = st.columns([1, 3])
                 with col1:
                     st.markdown("<div class='image-column'>", unsafe_allow_html=True)
                     image_path = pet.get("image_path", "")
@@ -215,10 +212,9 @@ else:
                             st.write("No image available")
                     else:
                         st.write("No image available")
+                    st.markdown(f"<div class='pet-description'>{pet['name']} ({pet['species']}, {pet['breed']}, {pet['gender']}, Age: {pet['age']})</div>", unsafe_allow_html=True)
                     st.markdown("</div>", unsafe_allow_html=True)
                 with col2:
-                    st.markdown("<div class='description-column'>", unsafe_allow_html=True)
-                    st.markdown(f"<div class='pet-description'>{pet['name']} ({pet['species']}, {pet['breed']}, {pet['gender']}, Age: {pet['age']})</div>", unsafe_allow_html=True)
                     st.markdown("<div class='button-container'>", unsafe_allow_html=True)
                     col_like, col_skip = st.columns(2)
                     with col_like:
@@ -234,7 +230,6 @@ else:
                             st.session_state.recommendation_index += 1
                             st.info(message)
                             st.rerun()
-                    st.markdown("</div>", unsafe_allow_html=True)
                     st.markdown("</div>", unsafe_allow_html=True)
             else:
                 st.success(st.session_state.contact_message)
