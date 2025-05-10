@@ -1,44 +1,57 @@
 import streamlit as st
 import pandas as pd
+import gspread
+from google.oauth2.service_account import Credentials
 import uuid
-import os
+import logging
 
-# Set page config
-st.set_page_config(page_title="Login/Registration", layout="wide")
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Initialize session state
 if "user" not in st.session_state:
     st.session_state.user = None
     st.session_state.user_type = None
 
-# Load CSVs
-@st.cache_data
+# Load credentials from secrets and initialize Google Sheets client
+try:
+    scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+    # Load the service account credentials directly from st.secrets
+    credentials_info = st.secrets["gcp_service_account"]
+    credentials = Credentials.from_service_account_info(credentials_info, scopes=scopes)
+    gc = gspread.authorize(credentials)
+except Exception as e:
+    logger.error(f"Failed to load credentials: {e}")
+    st.error(f"Error loading Google API credentials: {e}")
+    st.stop()
+
+# Load data from Google Sheets
 def load_data():
-    if os.path.exists("pets.csv"):
-        pets_df = pd.read_csv("pets.csv")
-    else:
-        pets_df = pd.DataFrame(columns=["pet_id", "species", "breed", "gender", "name", "sheltername", "activity_level", "age", "allergy_friendly", "time_in_shelter", "disability_current", "disability_past", "special_needs", "image_path"])
-    
-    if os.path.exists("adopters.csv"):
-        adopters_df = pd.read_csv("adopters.csv")
-    else:
-        adopters_df = pd.DataFrame(columns=["adopter_id", "name", "country", "age", "pref_species", "pref_gender", "house", "garden", "activity_level", "allergy_friendly", "apartment_size", "username", "password", "liked_pets", "skipped_pets"])
-    
-    if os.path.exists("shelters.csv"):
-        shelters_df = pd.read_csv("shelters.csv")
-    else:
-        shelters_df = pd.DataFrame(columns=["shelter_id", "name", "address", "email", "phone", "username", "password"])
-    
-    return pets_df, adopters_df, shelters_df
+    try:
+        pets_df = pd.DataFrame(gc.open_by_key(st.secrets["gcp"]["sheets_pets_id"]).sheet1.get_all_records())
+        adopters_df = pd.DataFrame(gc.open_by_key(st.secrets["gcp"]["sheets_adopters_id"]).sheet1.get_all_records())
+        shelters_df = pd.DataFrame(gc.open_by_key(st.secrets["gcp"]["sheets_shelters_id"]).sheet1.get_all_records())
+        return pets_df, adopters_df, shelters_df
+    except Exception as e:
+        logger.error(f"Failed to load data from Google Sheets: {e}")
+        st.error(f"Error loading data from Google Sheets: {e}")
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
 pets_df, adopters_df, shelters_df = load_data()
 
-# Save CSVs
+# Save data to Google Sheets
 def save_data():
     global pets_df, adopters_df, shelters_df
-    pets_df.to_csv("pets.csv", index=False)
-    adopters_df.to_csv("adopters.csv", index=False)
-    shelters_df.to_csv("shelters.csv", index=False)
+    try:
+        gc.open_by_key(st.secrets["gcp"]["sheets_pets_id"]).sheet1.update([pets_df.columns.values.tolist()] + pets_df.values.tolist())
+        gc.open_by_key(st.secrets["gcp"]["sheets_adopters_id"]).sheet1.update([adopters_df.columns.values.tolist()] + adopters_df.values.tolist())
+        gc.open_by_key(st.secrets["gcp"]["sheets_shelters_id"]).sheet1.update([shelters_df.columns.values.tolist()] + shelters_df.values.tolist())
+        # Reload data to reflect changes
+        pets_df, adopters_df, shelters_df = load_data()
+    except Exception as e:
+        logger.error(f"Failed to save data to Google Sheets: {e}")
+        st.error(f"Error saving data to Google Sheets: {e}")
 
 # Register user
 def register_user(user_type, data):
@@ -113,7 +126,7 @@ with col1:
             if st.button("Login"):
                 success, result = login_user(user_type, username, password)
                 if success:
-                    st.session_state.user = result
+                    st.session_state.user = result.to_dict()
                     st.session_state.user_type = user_type
                     save_data()
                     st.success("Login successful! Redirecting to dashboard...")
@@ -172,8 +185,6 @@ with col1:
                     st.error(message)
 
 with col2:
-    # Display image
-    if os.path.exists("pics/f1.jpg"):
-        st.image("pics/f1.jpg", caption="Happy Pets", width=300)
-    else:
-        st.warning("Image f1.jpg not found. Please ensure it is in the pics/ directory.")
+    # Display image (replace with your actual f1.jpg file ID from Google Drive)
+    f1_file_id = "your-f1-jpg-file-id"  # Replace with actual file ID
+    st.image(f"https://drive.google.com/uc?id={f1_file_id}", caption="Happy Pets", width=300)

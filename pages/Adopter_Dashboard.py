@@ -1,37 +1,69 @@
 import streamlit as st
 import pandas as pd
-import os
+import gspread
+from google.oauth2.service_account import Credentials
+from googleapiclient.discovery import build
+import logging
 
-# Set page config
-st.set_page_config(page_title="Adopter Dashboard", layout="wide")
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-# Load CSVs
+# Load credentials and initialize Google Sheets and Drive clients
+try:
+    scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+    credentials_info = st.secrets["gcp_service_account"]
+    credentials = Credentials.from_service_account_info(credentials_info, scopes=scopes)
+    gc = gspread.authorize(credentials)
+    drive_service = build("drive", "v3", credentials=credentials)
+except Exception as e:
+    logger.error(f"Failed to load credentials: {e}")
+    st.error(f"Error loading Google API credentials: {e}")
+    st.stop()
+
+# Load data from Google Sheets
 def load_data():
-    if os.path.exists("pets.csv"):
-        pets_df = pd.read_csv("pets.csv")
-    else:
-        pets_df = pd.DataFrame(columns=["pet_id", "species", "breed", "gender", "name", "sheltername", "activity_level", "age", "allergy_friendly", "time_in_shelter", "disability_current", "disability_past", "special_needs", "image_path"])
-    
-    if os.path.exists("adopters.csv"):
-        adopters_df = pd.read_csv("adopters.csv")
-    else:
-        adopters_df = pd.DataFrame(columns=["adopter_id", "name", "country", "age", "pref_species", "pref_gender", "house", "garden", "activity_level", "allergy_friendly", "apartment_size", "username", "password", "liked_pets", "skipped_pets"])
-    
-    if os.path.exists("shelters.csv"):
-        shelters_df = pd.read_csv("shelters.csv")
-    else:
-        shelters_df = pd.DataFrame(columns=["shelter_id", "name", "address", "email", "phone", "username", "password"])
-    
-    return pets_df, adopters_df, shelters_df
+    try:
+        pets_df = pd.DataFrame(gc.open_by_key(st.secrets["gcp"]["sheets_pets_id"]).sheet1.get_all_records())
+        adopters_df = pd.DataFrame(gc.open_by_key(st.secrets["gcp"]["sheets_adopters_id"]).sheet1.get_all_records())
+        shelters_df = pd.DataFrame(gc.open_by_key(st.secrets["gcp"]["sheets_shelters_id"]).sheet1.get_all_records())
+        return pets_df, adopters_df, shelters_df
+    except Exception as e:
+        logger.error(f"Failed to load data from Google Sheets: {e}")
+        st.error(f"Error loading data from Google Sheets: {e}")
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
 pets_df, adopters_df, shelters_df = load_data()
 
-# Save CSVs
+# Save data to Google Sheets
 def save_data():
     global pets_df, adopters_df, shelters_df
-    pets_df.to_csv("pets.csv", index=False)
-    adopters_df.to_csv("adopters.csv", index=False)
-    shelters_df.to_csv("shelters.csv", index=False)
+    try:
+        gc.open_by_key(st.secrets["gcp"]["sheets_pets_id"]).sheet1.update([pets_df.columns.values.tolist()] + pets_df.values.tolist())
+        gc.open_by_key(st.secrets["gcp"]["sheets_adopters_id"]).sheet1.update([adopters_df.columns.values.tolist()] + adopters_df.values.tolist())
+        gc.open_by_key(st.secrets["gcp"]["sheets_shelters_id"]).sheet1.update([shelters_df.columns.values.tolist()] + shelters_df.values.tolist())
+        # Reload data to reflect changes
+        pets_df, adopters_df, shelters_df = load_data()
+    except Exception as e:
+        logger.error(f"Failed to save data to Google Sheets: {e}")
+        st.error(f"Error saving data to Google Sheets: {e}")
+
+# Get image URL from Google Drive
+def get_image_url(file_id):
+    return f"https://drive.google.com/uc?id={file_id}"
+
+# Get image URL by searching for the file name in the Drive folder
+def get_drive_image_url(image_path):
+    try:
+        if image_path and "drive.google.com" not in image_path:
+            query = f"'{st.secrets['gcp']['drive_folder_id']}' in parents and name = '{image_path}'"
+            results = drive_service.files().list(q=query, fields="files(id)").execute()
+            files = results.get("files", [])
+            return get_image_url(files[0]["id"]) if files else None
+        return image_path
+    except Exception as e:
+        logger.error(f"Failed to get image URL from Google Drive: {e}")
+        return None
 
 # Matching function
 def calculate_match(adopter, pet):
@@ -85,6 +117,8 @@ def like_pet(adopter_id, pet_id):
         likes_list.append(pet_id)
         adopters_df.at[adopter_idx, "liked_pets"] = ",".join(likes_list)
     save_data()
+    # Update session state user
+    st.session_state.user = adopters_df.iloc[adopter_idx].to_dict()
     pet = pets_df[pets_df["pet_id"] == pet_id].iloc[0]
     shelter = shelters_df[shelters_df["name"] == pet["sheltername"]].iloc[0]
     phone = str(shelter["phone"]).strip() if shelter["phone"] and str(shelter["phone"]).strip() else "Not provided"
@@ -106,6 +140,8 @@ def skip_pet(adopter_id, pet_id):
         skips_list.append(pet_id)
         adopters_df.at[adopter_idx, "skipped_pets"] = ",".join(skips_list)
     save_data()
+    # Update session state user
+    st.session_state.user = adopters_df.iloc[adopter_idx].to_dict()
     return f"{pets_df[pets_df['pet_id'] == pet_id].iloc[0]['name']} has been skipped."
 
 # Delete adopter account
@@ -166,10 +202,12 @@ st.markdown("### Join Our Pet Adoption Community! 🐾")
 st.markdown("Find your furry friend or help pets find loving homes with our platform! ❤️")
 
 # Display image
-if os.path.exists("pics/f2.jpg"):
-    st.image("pics/f2.jpg", caption="Loving Homes", width=300)
+image_path = "f2.jpg"
+drive_url = get_drive_image_url(image_path)
+if drive_url:
+    st.image(drive_url, caption="Loving Homes", width=300)
 else:
-    st.warning("Image f2.jpg not found. Please ensure it is in the pics/ directory.")
+    st.warning("Image f2.jpg not found in Google Drive. Ensure it is uploaded to the PetImages folder.")
 
 if st.session_state.user is None or st.session_state.user_type != "Adopter":
     st.error("Please log in as an Adopter.")
@@ -206,9 +244,9 @@ else:
                     st.markdown("<div class='image-column'>", unsafe_allow_html=True)
                     image_path = pet.get("image_path", "")
                     if image_path:
-                        jpg_path = image_path if image_path.endswith(".jpg") else image_path.replace(".jpeg", ".jpg")
-                        if os.path.exists(jpg_path):
-                            st.image(jpg_path, caption=pet["name"], width=300)
+                        drive_url = get_drive_image_url(image_path)
+                        if drive_url:
+                            st.image(drive_url, caption=pet["name"], width=300)
                         else:
                             st.write("No image available")
                     else:
@@ -242,6 +280,9 @@ else:
     elif option == "View Liked Pets":
         st.subheader("Liked Pets")
         pets_df, adopters_df, shelters_df = load_data()
+        # Refresh user from adopters_df to ensure latest data
+        user = adopters_df[adopters_df["adopter_id"] == user["adopter_id"]].iloc[0]
+        st.session_state.user = user.to_dict()
         liked_pets = []
         if isinstance(user.get("liked_pets"), str) and user["liked_pets"].strip():
             liked_pets = user["liked_pets"].split(",")
@@ -265,9 +306,9 @@ else:
                             with col1:
                                 image_path = pet.get("image_path", "")
                                 if image_path:
-                                    jpg_path = image_path if image_path.endswith(".jpg") else image_path.replace(".jpeg", ".jpg")
-                                    if os.path.exists(jpg_path):
-                                        st.image(jpg_path, caption=pet["name"], width=300)
+                                    drive_url = get_drive_image_url(image_path)
+                                    if drive_url:
+                                        st.image(drive_url, caption=pet["name"], width=300)
                                     else:
                                         st.write("No image available")
                                 else:
