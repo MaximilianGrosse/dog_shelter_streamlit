@@ -3,7 +3,7 @@ import pandas as pd
 import uuid
 import os
 
-# Set page config first
+# Set page config
 st.set_page_config(page_title="Login/Registration", layout="wide")
 
 # Initialize session state
@@ -54,6 +54,10 @@ def register_user(user_type, data):
     else:  # Shelter
         if data["username"] in shelters_df["username"].values:
             return False, "Username already exists"
+        phone = data["phone"].replace("+", "").replace(" ", "")
+        if not phone.isdigit() or len(phone) < 10:
+            return False, "Phone number must be at least 10 digits and contain only numbers"
+        data["phone"] = phone
         data["shelter_id"] = f"SHEL{uuid.uuid4().hex[:6].upper()}"
         shelters_df = pd.concat([shelters_df, pd.DataFrame([data])], ignore_index=True)
     save_data()
@@ -67,19 +71,20 @@ def login_user(user_type, username, password):
         user = adopters_df[(adopters_df["username"] == username) & (adopters_df["password"] == password)]
         if not user.empty:
             return True, user.iloc[0]
-        else:
-            st.write(f"Debug: Adopter username '{username}' not found or password incorrect.")
     else:  # Shelter
         user = shelters_df[(shelters_df["username"] == username) & (shelters_df["password"] == password)]
         if not user.empty:
             return True, user.iloc[0]
-        else:
-            st.write(f"Debug: Shelter username '{username}' not found or password incorrect.")
     return False, "Invalid credentials"
 
-# Main app
-st.sidebar.title("Dog Shelter Adoption Platform")
+# Sidebar navigation
+st.sidebar.markdown("## Dog Shelter Adoption Platform")
+st.sidebar.markdown("### Navigation")
+st.page_link("app.py", label="Login/Registration")
+st.page_link("pages/Adopter_Dashboard.py", label="Adopter Dashboard")
+st.page_link("pages/Shelter_Dashboard.py", label="Shelter Dashboard")
 
+# Main app
 st.title("Dog Shelter Adoption Platform")
 st.markdown("### Join Our Pet Adoption Community! 🐾")
 st.markdown("Find your furry friend or help pets find loving homes with our platform! ❤️")
@@ -147,7 +152,10 @@ with col1:
                     else:
                         data[field] = st.text_input(field.capitalize(), key=f"reg_{field}")
                 else:  # Shelter
-                    data[field] = st.text_input(field.capitalize(), key=f"reg_{field}")
+                    if field == "phone":
+                        data[field] = st.text_input("Phone (at least 10 digits, numbers only)", key=f"reg_{field}")
+                    else:
+                        data[field] = st.text_input(field.capitalize(), key=f"reg_{field}")
             if st.button("Register"):
                 success, message = register_user(user_type, data)
                 if success:

@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import os
 
-# Set page config first
+# Set page config
 st.set_page_config(page_title="Adopter Dashboard", layout="wide")
 
 # Load CSVs
@@ -88,8 +88,11 @@ def like_pet(adopter_id, pet_id):
     save_data()
     pet = pets_df[pets_df["pet_id"] == pet_id].iloc[0]
     shelter = shelters_df[shelters_df["name"] == pet["sheltername"]].iloc[0]
-    phone = shelter["phone"]
-    formatted_phone = f"+{phone[:3]} {phone[3:]}"
+    phone = str(shelter["phone"]).strip() if shelter["phone"] and str(shelter["phone"]).strip() else "Not provided"
+    if phone and phone != "Not provided" and len(phone) >= 3 and phone.isdigit():
+        formatted_phone = f"+{phone[:3]} {phone[3:]}"
+    else:
+        formatted_phone = phone
     return f"{pet['name']} was liked by you. The contact information of the shelter located in {shelter['address']} is phone number {formatted_phone} and email {shelter['email']}. Please don't hesitate to contact them!"
 
 # Skip a pet
@@ -113,10 +116,14 @@ def delete_adopter_account(adopter_id):
     save_data()
     return "Adopter account deleted successfully"
 
-# Adopter dashboard
-st.sidebar.title("Dog Shelter Adoption Platform")
+# Sidebar navigation
+st.sidebar.markdown("## Dog Shelter Adoption Platform")
+st.sidebar.markdown("### Navigation")
+st.page_link("app.py", label="Login/Registration")
+st.page_link("pages/Adopter_Dashboard.py", label="Adopter Dashboard")
+st.page_link("pages/Shelter_Dashboard.py", label="Shelter Dashboard")
 
-# Logout button styling
+# Styling
 st.markdown("""
     <style>
     .logout-button {
@@ -134,10 +141,16 @@ st.markdown("""
         vertical-align: middle;
     }
     .pet-description {
-        margin-left: 20px;
+        margin-left: 80px;
     }
     .button-container {
-        padding-left: 10px;
+        padding-left: 70px;
+    }
+    .image-column {
+        margin-right: 30px;
+    }
+    .description-column {
+        min-width: 500px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -190,13 +203,21 @@ else:
         else:
             if not st.session_state.show_contact_message:
                 pet = recommendations[st.session_state.recommendation_index]
-                col1, col2 = st.columns([1, 3])
+                col1, col2 = st.columns([1, 6])
                 with col1:
-                    if pet.get("image_path") and os.path.exists(pet["image_path"]):
-                        st.image(pet["image_path"], caption=pet["name"], width=300)
+                    st.markdown("<div class='image-column'>", unsafe_allow_html=True)
+                    image_path = pet.get("image_path", "")
+                    if image_path:
+                        jpg_path = image_path if image_path.endswith(".jpg") else image_path.replace(".jpeg", ".jpg")
+                        if os.path.exists(jpg_path):
+                            st.image(jpg_path, caption=pet["name"], width=300)
+                        else:
+                            st.write("No image available")
                     else:
                         st.write("No image available")
+                    st.markdown("</div>", unsafe_allow_html=True)
                 with col2:
+                    st.markdown("<div class='description-column'>", unsafe_allow_html=True)
                     st.markdown(f"<div class='pet-description'>{pet['name']} ({pet['species']}, {pet['breed']}, {pet['gender']}, Age: {pet['age']})</div>", unsafe_allow_html=True)
                     st.markdown("<div class='button-container'>", unsafe_allow_html=True)
                     col_like, col_skip = st.columns(2)
@@ -213,6 +234,7 @@ else:
                             st.session_state.recommendation_index += 1
                             st.info(message)
                             st.rerun()
+                    st.markdown("</div>", unsafe_allow_html=True)
                     st.markdown("</div>", unsafe_allow_html=True)
             else:
                 st.success(st.session_state.contact_message)
@@ -236,12 +258,20 @@ else:
                         shelter_data = shelters_df[shelters_df["name"] == pet["sheltername"]]
                         if not shelter_data.empty:
                             shelter = shelter_data.iloc[0]
-                            phone = shelter["phone"]
-                            formatted_phone = f"+{phone[:3]} {phone[3:]}"
+                            phone = str(shelter["phone"]).strip() if shelter["phone"] and str(shelter["phone"]).strip() else "Not provided"
+                            if phone and phone != "Not provided" and len(phone) >= 3 and phone.isdigit():
+                                formatted_phone = f"+{phone[:3]} {phone[3:]}"
+                            else:
+                                formatted_phone = phone
                             col1, col2 = st.columns([1, 3])
                             with col1:
-                                if pet.get("image_path") and os.path.exists(pet["image_path"]):
-                                    st.image(pet["image_path"], caption=pet["name"], width=300)
+                                image_path = pet.get("image_path", "")
+                                if image_path:
+                                    jpg_path = image_path if image_path.endswith(".jpg") else image_path.replace(".jpeg", ".jpg")
+                                    if os.path.exists(jpg_path):
+                                        st.image(jpg_path, caption=pet["name"], width=300)
+                                    else:
+                                        st.write("No image available")
                                 else:
                                     st.write("No image available")
                             with col2:
