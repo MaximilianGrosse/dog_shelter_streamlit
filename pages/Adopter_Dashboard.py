@@ -47,10 +47,7 @@ def calculate_match(adopter, pet):
     if adopter["allergy_friendly"] == "Yes" and pet["allergy_friendly"] == "Yes":
         score += 0.2
     space_suitable = False
-    apartment_size = float(adopter["apartment_size"]) if adopter["apartment_size"] and str(adopter["apartment_size"]).strip() else 0
-    if pet["activity_level"] == "Low" or (adopter["house"] == "Yes" or adopter["garden"] == "Yes") or apartment_size >= 50:
-        space_suitable = True
-    if space_suitable and not pet["special_needs"]:
+    apartment_size = float(adopter["apartment_size"]) if adopter["apartment_size"] and str(adopter["apartment_size"]).strip() else 0  if space_suitable and not pet["special_needs"]:
         score += 0.2
     return score
 
@@ -133,6 +130,12 @@ st.markdown("""
         border-radius: 4px;
         vertical-align: middle;
     }
+    .pet-description {
+        margin-left: 20px;
+    }
+    .button-container {
+        padding-left: 10px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -191,7 +194,8 @@ else:
                     else:
                         st.write("No image available")
                 with col2:
-                    st.write(f"{pet['name']} ({pet['species']}, {pet['breed']}, {pet['gender']}, Age: {pet['age']})")
+                    st.markdown(f"<div class='pet-description'>{pet['name']} ({pet['species']}, {pet['breed']}, {pet['gender']}, Age: {pet['age']})</div>", unsafe_allow_html=True)
+                    st.markdown("<div class='button-container'>", unsafe_allow_html=True)
                     col_like, col_skip = st.columns(2)
                     with col_like:
                         if st.button(f"Like {pet['name']}", key=f"like_{pet['pet_id']}"):
@@ -199,15 +203,19 @@ else:
                             st.session_state.show_contact_message = True
                             st.session_state.contact_message = message
                             st.session_state.recommendation_index += 1
+                            st.rerun()
                     with col_skip:
                         if st.button(f"Skip {pet['name']}", key=f"skip_{pet['pet_id']}"):
                             message = skip_pet(user["adopter_id"], pet["pet_id"])
                             st.session_state.recommendation_index += 1
                             st.info(message)
+                            st.rerun()
+                    st.markdown("</div>", unsafe_allow_html=True)
             else:
                 st.success(st.session_state.contact_message)
                 if st.button("Review other pets"):
                     st.session_state.show_contact_message = False
+                    st.rerun()
 
     elif option == "View Liked Pets":
         st.subheader("Liked Pets")

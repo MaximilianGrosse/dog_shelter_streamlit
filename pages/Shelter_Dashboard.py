@@ -18,7 +18,7 @@ def load_data():
     if os.path.exists("adopters.csv"):
         adopters_df = pd.read_csv("adopters.csv")
     else:
-        adopters_df = pd.DataFrame(columns=["adopter_id", "name", "country", "age", "pref_species", "pref_gender", "house", "garden", "activity_level", "allergy_friendly", "apartment_size", "username", "password", "liked_pets"])
+        adopters_df = pd.DataFrame(columns=["adopter_id", "name", "country", "age", "pref_species", "pref_gender", "house", "garden", "activity_level", "allergy_friendly", "apartment_size", "username", "password", "liked_pets", "skipped_pets"])
     
     if os.path.exists("shelters.csv"):
         shelters_df = pd.read_csv("shelters.csv")
@@ -38,12 +38,22 @@ def save_data():
 
 # Breed lists
 BREEDS = {
-    "Dog": ["Labrador", "Golden Retriever", "German Wyrd", "Beagle", "Bulldog", "Poodle", "Husky", "Chihuahua", "Dachshund", "Boxer", "Rottweiler", "Shih Tzu", "Doberman", "Corgi", "Great Dane"],
+    "Dog": ["Labrador", "Golden Retriever", "German Shepherd", "Beagle", "Bulldog", "Poodle", "Husky", "Chihuahua", "Dachshund", "Boxer", "Rottweiler", "Shih Tzu", "Doberman", "Corgi", "Great Dane"],
     "Cat": ["Siamese", "Persian", "Maine Coon", "Tabby", "Bengal", "Ragdoll", "Abyssinian", "Sphynx", "British Shorthair", "Scottish Fold", "Burmese", "Oriental", "Norwegian Forest", "Devon Rex", "Manx"],
     "Rabbit": ["Lop", "Netherland Dwarf", "Lionhead", "Angora", "Flemish Giant", "Rex", "Mini Lop", "Dutch", "Himalayan", "Chinchilla"],
     "Turtle": ["Red-Eared Slider", "Box Turtle", "Hermann’s", "Russian", "Slider", "Painted Turtle", "Map Turtle", "Musk Turtle"],
     "Hamster": ["Syrian", "Roborovski", "Dwarf", "Golden", "Campbell’s", "Chinese", "Winter White"]
 }
+
+# Resize and save image
+def process_image(image_file, pet_id):
+    image_path = f"pet_pics/{pet_id}.jpg"
+    os.makedirs("pet_pics", exist_ok=True)
+    img = Image.open(image_file)
+    img = img.convert("RGB")
+    img.thumbnail((800, 800))  # Resize to max 800x800 pixels
+    img.save(image_path, "JPEG", quality=85)  # Save with compression
+    return image_path
 
 # Add pet
 def add_pet(shelter_id, pet_data, image_file=None):
@@ -52,12 +62,7 @@ def add_pet(shelter_id, pet_data, image_file=None):
     shelter = shelters_df[shelters_df["shelter_id"] == shelter_id].iloc[0]
     pet_data["sheltername"] = shelter["name"]
     if image_file:
-        image_path = f"pet_pics/{pet_data['pet_id']}.jpg"
-        os.makedirs("pet_pics", exist_ok=True)
-        # Convert and save as JPG
-        img = Image.open(image_file)
-        img.convert("RGB").save(image_path, "JPEG")
-        pet_data["image_path"] = image_path
+        pet_data["image_path"] = process_image(image_file, pet_data["pet_id"])
     else:
         pet_data["image_path"] = ""
     pets_df = pd.concat([pets_df, pd.DataFrame([pet_data])], ignore_index=True)
@@ -69,12 +74,7 @@ def edit_pet(pet_id, pet_data, image_file=None):
     global pets_df
     pet_idx = pets_df.index[pets_df["pet_id"] == pet_id].tolist()[0]
     if image_file:
-        image_path = f"pet_pics/{pet_id}.jpg"
-        os.makedirs("pet_pics", exist_ok=True)
-        # Convert and save as JPG
-        img = Image.open(image_file)
-        img.convert("RGB").save(image_path, "JPEG")
-        pet_data["image_path"] = image_path
+        pet_data["image_path"] = process_image(image_file, pet_id)
     elif "image_path" not in pet_data:
         pet_data["image_path"] = pets_df.at[pet_idx, "image_path"]
     for key, value in pet_data.items():
@@ -86,10 +86,20 @@ def edit_pet(pet_id, pet_data, image_file=None):
 def delete_shelter_account(shelter_id):
     global pets_df, shelters_df
     shelter = shelters_df[shelters_df["shelter_id"] == shelter_id].iloc[0]
+    # Delete associated pet images
+    shelter_pets = pets_df[pets_df["sheltername"] == shelter["name"]]
+    for _, pet in shelter_pets.iterrows():
+        image_path = pet.get("image_path")
+        if image_path and os.path.exists(image_path):
+            try:
+                os.remove(image_path)
+            except OSError:
+                pass  # Ignore if file can't be deleted
+    # Remove pets and shelter data
     pets_df = pets_df[pets_df["sheltername"] != shelter["name"]]
     shelters_df = shelters_df[shelters_df["shelter_id"] != shelter_id]
     save_data()
-    return "Shelter account and associated pets deleted successfully"
+    return "Shelter account, associated pets, and their images deleted successfully"
 
 # Shelter dashboard
 st.sidebar.title("Dog Shelter Adoption Platform")
