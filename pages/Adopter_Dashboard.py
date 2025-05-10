@@ -47,7 +47,10 @@ def calculate_match(adopter, pet):
     if adopter["allergy_friendly"] == "Yes" and pet["allergy_friendly"] == "Yes":
         score += 0.2
     space_suitable = False
-    apartment_size = float(adopter["apartment_size"]) if adopter["apartment_size"] and str(adopter["apartment_size"]).strip() else 0  if space_suitable and not pet["special_needs"]:
+    apartment_size = float(adopter["apartment_size"]) if adopter["apartment_size"] and str(adopter["apartment_size"]).strip() else 0
+    if pet["activity_level"] == "Low" or (adopter["house"] == "Yes" or adopter["garden"] == "Yes") or apartment_size >= 50:
+        space_suitable = True
+    if space_suitable and not pet["special_needs"]:
         score += 0.2
     return score
 
