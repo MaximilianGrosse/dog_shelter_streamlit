@@ -6,7 +6,6 @@ import os
 st.set_page_config(page_title="Adopter Dashboard", layout="wide")
 
 # Load CSVs
-@st.cache_data
 def load_data():
     if os.path.exists("pets.csv"):
         pets_df = pd.read_csv("pets.csv")
@@ -144,6 +143,7 @@ st.markdown("""
         margin-left: 20px;
     }
     .button-container {
+        margin-top: 10px;
         margin-left: 20px;
     }
     .image-column {
@@ -191,6 +191,7 @@ else:
 
     if option == "View Recommended Pets":
         st.subheader("Recommended Pets")
+        pets_df, adopters_df, shelters_df = load_data()
         recommendations = get_recommendations(user["adopter_id"])
         
         if not recommendations:
@@ -215,22 +216,23 @@ else:
                     st.markdown(f"<div class='pet-description'>{pet['name']} ({pet['species']}, {pet['breed']}, {pet['gender']}, Age: {pet['age']})</div>", unsafe_allow_html=True)
                     st.markdown("</div>", unsafe_allow_html=True)
                 with col2:
-                    st.markdown("<div class='button-container'>", unsafe_allow_html=True)
-                    col_like, col_skip = st.columns(2)
-                    with col_like:
-                        if st.button(f"Like {pet['name']}", key=f"like_{pet['pet_id']}"):
-                            message = like_pet(user["adopter_id"], pet["pet_id"])
-                            st.session_state.show_contact_message = True
-                            st.session_state.contact_message = message
-                            st.session_state.recommendation_index += 1
-                            st.rerun()
-                    with col_skip:
-                        if st.button(f"Skip {pet['name']}", key=f"skip_{pet['pet_id']}"):
-                            message = skip_pet(user["adopter_id"], pet["pet_id"])
-                            st.session_state.recommendation_index += 1
-                            st.info(message)
-                            st.rerun()
-                    st.markdown("</div>", unsafe_allow_html=True)
+                    with st.container():
+                        st.markdown("<div class='button-container'>", unsafe_allow_html=True)
+                        col_like, col_skip = st.columns(2)
+                        with col_like:
+                            if st.button(f"Like {pet['name']}", key=f"like_{pet['pet_id']}"):
+                                message = like_pet(user["adopter_id"], pet["pet_id"])
+                                st.session_state.show_contact_message = True
+                                st.session_state.contact_message = message
+                                st.session_state.recommendation_index += 1
+                                st.rerun()
+                        with col_skip:
+                            if st.button(f"Skip {pet['name']}", key=f"skip_{pet['pet_id']}"):
+                                message = skip_pet(user["adopter_id"], pet["pet_id"])
+                                st.session_state.recommendation_index += 1
+                                st.info(message)
+                                st.rerun()
+                        st.markdown("</div>", unsafe_allow_html=True)
             else:
                 st.success(st.session_state.contact_message)
                 if st.button("Review other pets"):
@@ -239,6 +241,7 @@ else:
 
     elif option == "View Liked Pets":
         st.subheader("Liked Pets")
+        pets_df, adopters_df, shelters_df = load_data()
         liked_pets = []
         if isinstance(user.get("liked_pets"), str) and user["liked_pets"].strip():
             liked_pets = user["liked_pets"].split(",")
