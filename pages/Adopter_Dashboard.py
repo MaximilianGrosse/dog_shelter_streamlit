@@ -32,17 +32,31 @@ except Exception as e:
 
 def load_data():
     try:
-        time.sleep(1)  # Ensure API is ready
+        time.sleep(3)  # Increase delay to 3 seconds to avoid rate limits
         sheets = {
             "pets": gc.open_by_key(st.secrets["gcp"]["sheets_pets_id"]).sheet1,
             "adopters": gc.open_by_key(st.secrets["gcp"]["sheets_adopters_id"]).sheet1,
             "shelters": gc.open_by_key(st.secrets["gcp"]["sheets_shelters_id"]).sheet1
         }
-        pets_df = pd.DataFrame(sheets["pets"].get_all_records())
-        adopters_df = pd.DataFrame(sheets["adopters"].get_all_records())
-        shelters_df = pd.DataFrame(sheets["shelters"].get_all_records())
         
-        # Validate column existence
+        # Fetch data with retry logic
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                pets_df = pd.DataFrame(sheets["pets"].get_all_records())
+                adopters_df = pd.DataFrame(sheets["adopters"].get_all_records())
+                shelters_df = pd.DataFrame(sheets["shelters"].get_all_records())
+                break  # Success, exit retry loop
+            except gspread.exceptions.APIError as api_err:
+                if api_err.response.get('error', {}).get('code') == 429:  # Rate limit
+                    logger.warning(f"Rate limit hit on attempt {attempt + 1}, retrying...")
+                    time.sleep(2 ** attempt)  # Exponential backoff
+                    if attempt == max_retries - 1:
+                        raise api_err
+                else:
+                    raise api_err
+        
+        # Validate column existence (reverted header logging as requested)
         required_columns = {
             "pets": ["pet_id", "species", "breed", "gender", "name"],
             "adopters": ["adopter_id", "username", "password", "name"],
@@ -59,6 +73,10 @@ def load_data():
     except gspread.exceptions.APIError as api_err:
         logger.error(f"API Error loading data from Google Sheets: {api_err.response.get('error', {}).get('message', str(api_err))}")
         st.error(f"API Error loading data from Google Sheets: {api_err.response.get('error', {}).get('message', str(api_err))}")
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+    except gspread.exceptions.WorksheetNotFound as wnf_err:
+        logger.error(f"Worksheet not found: {str(wnf_err)}")
+        st.error(f"Worksheet not found in Google Sheet. Ensure the tab is named 'Sheet1': {str(wnf_err)}")
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
     except Exception as e:
         logger.error(f"Unexpected error loading data from Google Sheets: {str(e)}")
@@ -271,11 +289,11 @@ else:
                     st.markdown("<div class='image-column'>", unsafe_allow_html=True)
                     image_path = pet.get("image_path", "")
                     if image_path:
-                        drive_url = get_drive_image_url(image_path)
+                        drive_url = get_drive_image_url("f2.jpg")
                         if drive_url:
-                            st.image(drive_url, caption=pet["name"], width=300)
+                            st.image(drive_url, caption="Loving Homes", width=300)
                         else:
-                            st.write("No image available")
+                            st.warning("Image f2.jpg not found in Google Drive. Ensure it is uploaded to the PetImages folder.")
                     else:
                         st.write("No image available")
                     st.markdown(f"<div class='pet-description'>{pet['name']} ({pet['species']}, {pet['breed']}, {pet['gender']}, Age: {pet['age']})</div>", unsafe_allow_html=True)
