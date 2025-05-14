@@ -6,7 +6,6 @@ from googleapiclient.discovery import build
 import logging
 import time
 
-
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -29,7 +28,6 @@ except Exception as e:
     st.stop()
 
 # Load data from Google Sheets
-
 def load_data():
     try:
         time.sleep(3)  # Delay to avoid rate limits
@@ -119,7 +117,7 @@ def save_data():
 def get_image_url(file_id):
     return f"https://drive.google.com/uc?id={file_id}"
 
-# Get image URL by searching for the file name in the Drive folder (for user-uploaded pet photos)
+# Get image URL by searching for the file name in the Drive folder
 def get_drive_image_url(image_path):
     try:
         if image_path and "drive.google.com" not in image_path:
@@ -268,8 +266,12 @@ with col2:
 st.markdown("### Join Our Pet Adoption Community! 🐾")
 st.markdown("Find your furry friend or help pets find loving homes with our platform! ❤️")
 
-# Display image from pics folder
-st.image("pics/f2.jpg", caption="Loving Homes", width=300)
+# Display image from Google Drive
+drive_url = get_drive_image_url("f2.jpg")
+if drive_url:
+    st.image(drive_url, caption="Loving Homes", width=300)
+else:
+    st.warning("Image f2.jpg not found in Google Drive. Ensure it is uploaded to the PetImages folder.")
 
 if st.session_state.user is None or st.session_state.user_type != "Adopter":
     st.error("Please log in as an Adopter.")
@@ -292,7 +294,6 @@ else:
     if option == "View Recommended Pets":
         st.subheader("Recommended Pets")
         pets_df, adopters_df, shelters_df = load_data()
-        recommendations = get_recommendations(user["adopter_id"])
         
         if not recommendations:
             st.info("No more pets to recommend.")
@@ -306,11 +307,11 @@ else:
                     st.markdown("<div class='image-column'>", unsafe_allow_html=True)
                     image_path = pet.get("image_path", "")
                     if image_path:
-                        drive_url = get_drive_image_url("f2.jpg")
+                        drive_url = get_drive_image_url(image_path)
                         if drive_url:
-                            st.image(drive_url, caption="Loving Homes", width=300)
+                            st.image(drive_url, caption=pet["name"], width=300)
                         else:
-                            st.warning("Image f2.jpg not found in Google Drive. Ensure it is uploaded to the PetImages folder.")
+                            st.write("No image available")
                     else:
                         st.write("No image available")
                     st.markdown(f"<div class='pet-description'>{pet['name']} ({pet['species']}, {pet['breed']}, {pet['gender']}, Age: {pet['age']})</div>", unsafe_allow_html=True)

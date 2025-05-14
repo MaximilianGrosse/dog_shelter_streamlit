@@ -2,11 +2,10 @@ import streamlit as st
 import pandas as pd
 import gspread
 from google.oauth2.service_account import Credentials
-from googleapiclient.discovery import build  # Add this line
+from googleapiclient.discovery import build
 import uuid
 import logging
 import time
-
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -17,43 +16,18 @@ if "user" not in st.session_state:
     st.session_state.user = None
 if "user_type" not in st.session_state:
     st.session_state.user_type = None
-    
-# Load credentials from secrets and initialize Google Sheets client
+
+# Load credentials from secrets and initialize Google Sheets and Drive clients
 try:
     scopes = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     credentials_info = st.secrets["gcp_service_account"]
     credentials = Credentials.from_service_account_info(credentials_info, scopes=scopes)
     gc = gspread.authorize(credentials)
-    drive_service = build("drive", "v3", credentials=credentials)  # Add this line
+    drive_service = build("drive", "v3", credentials=credentials)
 except Exception as e:
     logger.error(f"Failed to load credentials: {e}")
     st.error(f"Error loading Google API credentials: {e}")
     st.stop()
-
-# Add get_image_url() function (for consistency)
-def get_image_url(file_id):
-    return f"https://drive.google.com/uc?id={file_id}"
-
-# Ensure get_drive_image_url() is correctly defined
-def get_drive_image_url(image_path):
-    try:
-        if image_path and "drive.google.com" not in image_path:
-            query = f"'{st.secrets['gcp']['drive_folder_id']}' in parents and name = '{image_path}'"
-            results = drive_service.files().list(q=query, fields="files(id)").execute()
-            files = results.get("files", [])
-            return get_image_url(files[0]["id"]) if files else None
-        return image_path
-    except Exception as e:
-        logger.error(f"Failed to get image URL from Google Drive: {e}")
-        return None
-
-# Existing image display code (already updated)
-with col2:
-    drive_url = get_drive_image_url("f1.jpg")
-    if drive_url:
-        st.image(drive_url, caption="Happy Pets", width=300)
-    else:
-        st.warning("Image f1.jpg not found in Google Drive. Ensure it is uploaded to the PetImages folder.")
 
 # Load data from Google Sheets
 def load_data():
@@ -178,6 +152,23 @@ def login_user(user_type, username, password):
             return True, user.iloc[0]
     return False, "Invalid credentials"
 
+# Get image URL from Google Drive
+def get_image_url(file_id):
+    return f"https://drive.google.com/uc?id={file_id}"
+
+# Get drive image URL
+def get_drive_image_url(image_path):
+    try:
+        if image_path and "drive.google.com" not in image_path:
+            query = f"'{st.secrets['gcp']['drive_folder_id']}' in parents and name = '{image_path}'"
+            results = drive_service.files().list(q=query, fields="files(id)").execute()
+            files = results.get("files", [])
+            return get_image_url(files[0]["id"]) if files else None
+        return image_path
+    except Exception as e:
+        logger.error(f"Failed to get image URL from Google Drive: {e}")
+        return None
+
 # Sidebar navigation
 st.sidebar.markdown("## Dog Shelter Adoption Platform")
 st.sidebar.markdown("### Navigation")
@@ -272,14 +263,10 @@ with col1:
                 else:
                     st.error(message)
 
-def get_drive_image_url(image_path):
-    try:
-        if image_path and "drive.google.com" not in image_path:
-            query = f"'{st.secrets['gcp']['drive_folder_id']}' in parents and name = '{image_path}'"
-            results = drive_service.files().list(q=query, fields="files(id)").execute()
-            files = results.get("files", [])
-            return get_image_url(files[0]["id"]) if files else None
-        return image_path
-    except Exception as e:
-        logger.error(f"Failed to get image URL from Google Drive: {e}")
-        return None
+with col2:
+    # Display image from Google Drive
+    drive_url = get_drive_image_url("f1.jpg")
+    if drive_url:
+        st.image(drive_url, caption="Happy Pets", width=300)
+    else:
+        st.warning("Image f1.jpg not found in Google Drive. Ensure it is uploaded to the PetImages folder.")

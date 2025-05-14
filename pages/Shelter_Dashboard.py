@@ -9,7 +9,6 @@ import io
 import logging
 import time
 
-
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
