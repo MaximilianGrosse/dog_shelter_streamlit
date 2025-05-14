@@ -34,31 +34,48 @@ except Exception as e:
 # Load data from Google Sheets
 def load_data():
     try:
-        time.sleep(3)  # Increase delay to 3 seconds to avoid rate limits
+        time.sleep(3)  # Delay to avoid rate limits
         sheets = {
             "pets": gc.open_by_key(st.secrets["gcp"]["sheets_pets_id"]).sheet1,
             "adopters": gc.open_by_key(st.secrets["gcp"]["sheets_adopters_id"]).sheet1,
             "shelters": gc.open_by_key(st.secrets["gcp"]["sheets_shelters_id"]).sheet1
         }
         
-        # Fetch data with retry logic
+        # Fetch data with retry logic and detailed error handling
         max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                pets_df = pd.DataFrame(sheets["pets"].get_all_records())
-                adopters_df = pd.DataFrame(sheets["adopters"].get_all_records())
-                shelters_df = pd.DataFrame(sheets["shelters"].get_all_records())
-                break  # Success, exit retry loop
-            except gspread.exceptions.APIError as api_err:
-                if api_err.response.get('error', {}).get('code') == 429:  # Rate limit
-                    logger.warning(f"Rate limit hit on attempt {attempt + 1}, retrying...")
-                    time.sleep(2 ** attempt)  # Exponential backoff
-                    if attempt == max_retries - 1:
+        dataframes = {}
+        for sheet_name in ["pets", "adopters", "shelters"]:
+            for attempt in range(max_retries):
+                try:
+                    # Fetch raw data as a list of lists to inspect
+                    raw_data = sheets[sheet_name].get_all_values()
+                    if not raw_data:
+                        raise ValueError(f"No data found in {sheet_name} sheet")
+                    # Convert to DataFrame manually to handle encoding
+                    headers = raw_data[0]
+                    data = raw_data[1:]
+                    df = pd.DataFrame(data, columns=headers)
+                    dataframes[sheet_name] = df
+                    logger.info(f"Successfully loaded {sheet_name} data with {len(df)} rows")
+                    break
+                except gspread.exceptions.APIError as api_err:
+                    if api_err.response.get('error', {}).get('code') == 429:  # Rate limit
+                        logger.warning(f"Rate limit hit for {sheet_name} on attempt {attempt + 1}, retrying...")
+                        time.sleep(2 ** attempt)  # Exponential backoff
+                        if attempt == max_retries - 1:
+                            raise api_err
+                    else:
                         raise api_err
-                else:
-                    raise api_err
+                except Exception as e:
+                    logger.error(f"Failed to load {sheet_name} data on attempt {attempt + 1}: {str(e)}")
+                    if attempt == max_retries - 1:
+                        raise e
         
-        # Validate column existence (reverted header logging as requested)
+        pets_df = dataframes["pets"]
+        adopters_df = dataframes["adopters"]
+        shelters_df = dataframes["shelters"]
+        
+        # Validate column existence
         required_columns = {
             "pets": ["pet_id", "species", "breed", "gender", "name"],
             "adopters": ["adopter_id", "username", "password", "name"],

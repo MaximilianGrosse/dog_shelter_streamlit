@@ -23,39 +23,82 @@ try:
     credentials_info = st.secrets["gcp_service_account"]
     credentials = Credentials.from_service_account_info(credentials_info, scopes=scopes)
     gc = gspread.authorize(credentials)
+    drive_service = build("drive", "v3", credentials=credentials)  # Add this line
 except Exception as e:
     logger.error(f"Failed to load credentials: {e}")
     st.error(f"Error loading Google API credentials: {e}")
     st.stop()
 
+# Add get_image_url() function (for consistency)
+def get_image_url(file_id):
+    return f"https://drive.google.com/uc?id={file_id}"
+
+# Ensure get_drive_image_url() is correctly defined
+def get_drive_image_url(image_path):
+    try:
+        if image_path and "drive.google.com" not in image_path:
+            query = f"'{st.secrets['gcp']['drive_folder_id']}' in parents and name = '{image_path}'"
+            results = drive_service.files().list(q=query, fields="files(id)").execute()
+            files = results.get("files", [])
+            return get_image_url(files[0]["id"]) if files else None
+        return image_path
+    except Exception as e:
+        logger.error(f"Failed to get image URL from Google Drive: {e}")
+        return None
+
+# Existing image display code (already updated)
+with col2:
+    drive_url = get_drive_image_url("f1.jpg")
+    if drive_url:
+        st.image(drive_url, caption="Happy Pets", width=300)
+    else:
+        st.warning("Image f1.jpg not found in Google Drive. Ensure it is uploaded to the PetImages folder.")
+
 # Load data from Google Sheets
 def load_data():
     try:
-        time.sleep(3)  # Increase delay to 3 seconds to avoid rate limits
+        time.sleep(3)  # Delay to avoid rate limits
         sheets = {
             "pets": gc.open_by_key(st.secrets["gcp"]["sheets_pets_id"]).sheet1,
             "adopters": gc.open_by_key(st.secrets["gcp"]["sheets_adopters_id"]).sheet1,
             "shelters": gc.open_by_key(st.secrets["gcp"]["sheets_shelters_id"]).sheet1
         }
         
-        # Fetch data with retry logic
+        # Fetch data with retry logic and detailed error handling
         max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                pets_df = pd.DataFrame(sheets["pets"].get_all_records())
-                adopters_df = pd.DataFrame(sheets["adopters"].get_all_records())
-                shelters_df = pd.DataFrame(sheets["shelters"].get_all_records())
-                break  # Success, exit retry loop
-            except gspread.exceptions.APIError as api_err:
-                if api_err.response.get('error', {}).get('code') == 429:  # Rate limit
-                    logger.warning(f"Rate limit hit on attempt {attempt + 1}, retrying...")
-                    time.sleep(2 ** attempt)  # Exponential backoff
-                    if attempt == max_retries - 1:
+        dataframes = {}
+        for sheet_name in ["pets", "adopters", "shelters"]:
+            for attempt in range(max_retries):
+                try:
+                    # Fetch raw data as a list of lists to inspect
+                    raw_data = sheets[sheet_name].get_all_values()
+                    if not raw_data:
+                        raise ValueError(f"No data found in {sheet_name} sheet")
+                    # Convert to DataFrame manually to handle encoding
+                    headers = raw_data[0]
+                    data = raw_data[1:]
+                    df = pd.DataFrame(data, columns=headers)
+                    dataframes[sheet_name] = df
+                    logger.info(f"Successfully loaded {sheet_name} data with {len(df)} rows")
+                    break
+                except gspread.exceptions.APIError as api_err:
+                    if api_err.response.get('error', {}).get('code') == 429:  # Rate limit
+                        logger.warning(f"Rate limit hit for {sheet_name} on attempt {attempt + 1}, retrying...")
+                        time.sleep(2 ** attempt)  # Exponential backoff
+                        if attempt == max_retries - 1:
+                            raise api_err
+                    else:
                         raise api_err
-                else:
-                    raise api_err
+                except Exception as e:
+                    logger.error(f"Failed to load {sheet_name} data on attempt {attempt + 1}: {str(e)}")
+                    if attempt == max_retries - 1:
+                        raise e
         
-        # Validate column existence (reverted header logging as requested)
+        pets_df = dataframes["pets"]
+        adopters_df = dataframes["adopters"]
+        shelters_df = dataframes["shelters"]
+        
+        # Validate column existence
         required_columns = {
             "pets": ["pet_id", "species", "breed", "gender", "name"],
             "adopters": ["adopter_id", "username", "password", "name"],
@@ -239,10 +282,3 @@ def get_drive_image_url(image_path):
     except Exception as e:
         logger.error(f"Failed to get image URL from Google Drive: {e}")
         return None
-
-with col2:
-    drive_url = get_drive_image_url("f1.jpg")
-    if drive_url:
-        st.image(drive_url, caption="Happy Pets", width=300)
-    else:
-        st.warning("Image f1.jpg not found in Google Drive. Ensure it is uploaded to the PetImages folder.")
