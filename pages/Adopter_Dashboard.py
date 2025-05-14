@@ -4,10 +4,17 @@ import gspread
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 import logging
+import time
+
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+if "user" not in st.session_state:
+    st.session_state.user = None
+if "user_type" not in st.session_state:
+    st.session_state.user_type = None
 
 # Load credentials and initialize Google Sheets and Drive clients
 try:
@@ -22,15 +29,40 @@ except Exception as e:
     st.stop()
 
 # Load data from Google Sheets
+
 def load_data():
     try:
-        pets_df = pd.DataFrame(gc.open_by_key(st.secrets["gcp"]["sheets_pets_id"]).sheet1.get_all_records())
-        adopters_df = pd.DataFrame(gc.open_by_key(st.secrets["gcp"]["sheets_adopters_id"]).sheet1.get_all_records())
-        shelters_df = pd.DataFrame(gc.open_by_key(st.secrets["gcp"]["sheets_shelters_id"]).sheet1.get_all_records())
+        time.sleep(1)  # Ensure API is ready
+        sheets = {
+            "pets": gc.open_by_key(st.secrets["gcp"]["sheets_pets_id"]).sheet1,
+            "adopters": gc.open_by_key(st.secrets["gcp"]["sheets_adopters_id"]).sheet1,
+            "shelters": gc.open_by_key(st.secrets["gcp"]["sheets_shelters_id"]).sheet1
+        }
+        pets_df = pd.DataFrame(sheets["pets"].get_all_records())
+        adopters_df = pd.DataFrame(sheets["adopters"].get_all_records())
+        shelters_df = pd.DataFrame(sheets["shelters"].get_all_records())
+        
+        # Validate column existence
+        required_columns = {
+            "pets": ["pet_id", "species", "breed", "gender", "name"],
+            "adopters": ["adopter_id", "username", "password", "name"],
+            "shelters": ["shelter_id", "username", "password", "name"]
+        }
+        for df_name, df in [("pets", pets_df), ("adopters", adopters_df), ("shelters", shelters_df)]:
+            if df.empty or not all(col in df.columns for col in required_columns[df_name]):
+                logger.error(f"{df_name.capitalize()} DataFrame is empty or missing columns: {required_columns[df_name]}")
+                st.error(f"{df_name.capitalize()} data is missing or malformed. Please check the Google Sheet.")
+                return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        
+        logger.info("Data loaded successfully from Google Sheets")
         return pets_df, adopters_df, shelters_df
+    except gspread.exceptions.APIError as api_err:
+        logger.error(f"API Error loading data from Google Sheets: {api_err.response.get('error', {}).get('message', str(api_err))}")
+        st.error(f"API Error loading data from Google Sheets: {api_err.response.get('error', {}).get('message', str(api_err))}")
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
     except Exception as e:
-        logger.error(f"Failed to load data from Google Sheets: {e}")
-        st.error(f"Error loading data from Google Sheets: {e}")
+        logger.error(f"Unexpected error loading data from Google Sheets: {str(e)}")
+        st.error(f"Unexpected error loading data from Google Sheets: {str(e)}")
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
 pets_df, adopters_df, shelters_df = load_data()
@@ -52,7 +84,7 @@ def save_data():
 def get_image_url(file_id):
     return f"https://drive.google.com/uc?id={file_id}"
 
-# Get image URL by searching for the file name in the Drive folder
+# Get image URL by searching for the file name in the Drive folder (for user-uploaded pet photos)
 def get_drive_image_url(image_path):
     try:
         if image_path and "drive.google.com" not in image_path:
@@ -201,13 +233,8 @@ with col2:
 st.markdown("### Join Our Pet Adoption Community! 🐾")
 st.markdown("Find your furry friend or help pets find loving homes with our platform! ❤️")
 
-# Display image
-image_path = "f2.jpg"
-drive_url = get_drive_image_url(image_path)
-if drive_url:
-    st.image(drive_url, caption="Loving Homes", width=300)
-else:
-    st.warning("Image f2.jpg not found in Google Drive. Ensure it is uploaded to the PetImages folder.")
+# Display image from pics folder
+st.image("pics/f2.jpg", caption="Loving Homes", width=300)
 
 if st.session_state.user is None or st.session_state.user_type != "Adopter":
     st.error("Please log in as an Adopter.")

@@ -7,10 +7,17 @@ import uuid
 from googleapiclient.http import MediaIoBaseUpload
 import io
 import logging
+import time
+
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+if "user" not in st.session_state:
+    st.session_state.user = None
+if "user_type" not in st.session_state:
+    st.session_state.user_type = None
 
 # Load credentials and initialize Google Sheets and Drive clients
 try:
@@ -27,13 +34,37 @@ except Exception as e:
 # Load data from Google Sheets
 def load_data():
     try:
-        pets_df = pd.DataFrame(gc.open_by_key(st.secrets["gcp"]["sheets_pets_id"]).sheet1.get_all_records())
-        adopters_df = pd.DataFrame(gc.open_by_key(st.secrets["gcp"]["sheets_adopters_id"]).sheet1.get_all_records())
-        shelters_df = pd.DataFrame(gc.open_by_key(st.secrets["gcp"]["sheets_shelters_id"]).sheet1.get_all_records())
+        time.sleep(1)  # Ensure API is ready
+        sheets = {
+            "pets": gc.open_by_key(st.secrets["gcp"]["sheets_pets_id"]).sheet1,
+            "adopters": gc.open_by_key(st.secrets["gcp"]["sheets_adopters_id"]).sheet1,
+            "shelters": gc.open_by_key(st.secrets["gcp"]["sheets_shelters_id"]).sheet1
+        }
+        pets_df = pd.DataFrame(sheets["pets"].get_all_records())
+        adopters_df = pd.DataFrame(sheets["adopters"].get_all_records())
+        shelters_df = pd.DataFrame(sheets["shelters"].get_all_records())
+        
+        # Validate column existence
+        required_columns = {
+            "pets": ["pet_id", "species", "breed", "gender", "name"],
+            "adopters": ["adopter_id", "username", "password", "name"],
+            "shelters": ["shelter_id", "username", "password", "name"]
+        }
+        for df_name, df in [("pets", pets_df), ("adopters", adopters_df), ("shelters", shelters_df)]:
+            if df.empty or not all(col in df.columns for col in required_columns[df_name]):
+                logger.error(f"{df_name.capitalize()} DataFrame is empty or missing columns: {required_columns[df_name]}")
+                st.error(f"{df_name.capitalize()} data is missing or malformed. Please check the Google Sheet.")
+                return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        
+        logger.info("Data loaded successfully from Google Sheets")
         return pets_df, adopters_df, shelters_df
+    except gspread.exceptions.APIError as api_err:
+        logger.error(f"API Error loading data from Google Sheets: {api_err.response.get('error', {}).get('message', str(api_err))}")
+        st.error(f"API Error loading data from Google Sheets: {api_err.response.get('error', {}).get('message', str(api_err))}")
+        return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
     except Exception as e:
-        logger.error(f"Failed to load data from Google Sheets: {e}")
-        st.error(f"Error loading data from Google Sheets: {e}")
+        logger.error(f"Unexpected error loading data from Google Sheets: {str(e)}")
+        st.error(f"Unexpected error loading data from Google Sheets: {str(e)}")
         return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
 pets_df, adopters_df, shelters_df = load_data()
