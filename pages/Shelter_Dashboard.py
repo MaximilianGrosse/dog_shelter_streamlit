@@ -1,3 +1,6 @@
+import os
+os.environ["GOOGLE_API_USE_CLIENT_CERTIFICATE"] = "true"
+
 import streamlit as st
 import pandas as pd
 import gspread
@@ -8,6 +11,7 @@ from googleapiclient.http import MediaIoBaseUpload
 import io
 import logging
 import time
+
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -34,11 +38,31 @@ except Exception as e:
 def load_data():
     try:
         time.sleep(3)  # Delay to avoid rate limits
-        sheets = {
-            "pets": gc.open_by_key(st.secrets["gcp"]["sheets_pets_id"]).sheet1,
-            "adopters": gc.open_by_key(st.secrets["gcp"]["sheets_adopters_id"]).sheet1,
-            "shelters": gc.open_by_key(st.secrets["gcp"]["sheets_shelters_id"]).sheet1
+        sheets = {}
+        sheet_configs = {
+            "pets": st.secrets["gcp"]["sheets_pets_id"],
+            "adopters": st.secrets["gcp"]["sheets_adopters_id"],
+            "shelters": st.secrets["gcp"]["sheets_shelters_id"]
         }
+        
+        # Initialize sheets with detailed error handling
+        for sheet_name, sheet_id in sheet_configs.items():
+            try:
+                spreadsheet = gc.open_by_key(sheet_id)
+                sheets[sheet_name] = spreadsheet.sheet1
+                logger.info(f"Successfully accessed {sheet_name} sheet (ID: {sheet_id})")
+            except gspread.exceptions.SpreadsheetNotFound as snf_err:
+                logger.error(f"Spreadsheet not found for {sheet_name} (ID: {sheet_id}): {str(snf_err)}")
+                st.error(f"Spreadsheet not found for {sheet_name} (ID: {sheet_id}). Please check the Sheet ID and permissions.")
+                return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+            except gspread.exceptions.APIError as api_err:
+                logger.error(f"API Error accessing {sheet_name} (ID: {sheet_id}): {api_err.response.get('error', {}).get('message', str(api_err))}")
+                st.error(f"API Error accessing {sheet_name} (ID: {sheet_id}): {api_err.response.get('error', {}).get('message', str(api_err))}")
+                return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+            except Exception as e:
+                logger.error(f"Unexpected error accessing {sheet_name} (ID: {sheet_id}): {str(e)}")
+                st.error(f"Unexpected error accessing {sheet_name} (ID: {sheet_id}): {str(e)}")
+                return pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
         
         # Fetch data with retry logic and detailed error handling
         max_retries = 3
