@@ -17,7 +17,7 @@ if "skipped_pets" not in st.session_state:
     st.session_state.skipped_pets = []
 
 # GitHub repository details (replace 'yourusername' with your actual GitHub username)
-GITHUB_USERNAME = "yourusername"  # Replace with your GitHub username
+GITHUB_USERNAME = "MaximilianGrosse"  # Replace with your GitHub username
 REPO_NAME = "dog_shelter_streamlit"
 BRANCH = "main"
 CSV_URL = f"https://raw.githubusercontent.com/{GITHUB_USERNAME}/{REPO_NAME}/{BRANCH}/pets.csv"
